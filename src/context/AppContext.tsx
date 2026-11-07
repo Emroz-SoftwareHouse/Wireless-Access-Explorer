@@ -31,6 +31,14 @@ interface AppContextType {
   setMobileSidebarOpen: (open: boolean) => void;
   toggleMobileSidebar: () => void;
 
+  // Collapsible Panels (Desktop & Mobile)
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  toggleSidebarCollapse: () => void;
+  eventLogCollapsed: boolean;
+  setEventLogCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  toggleEventLogCollapse: () => void;
+
   // Active Sub-Step
   activeSubStepIndex: number;
   setActiveSubStepIndex: (index: number) => void;
@@ -47,6 +55,7 @@ interface AppContextType {
   simPlaying: boolean;
   simSpeed: SimSpeed;
   simTime: number; // in seconds
+  setSimTime: React.Dispatch<React.SetStateAction<number>>;
   deliveredPacketsCount: number;
   events: SimEvent[];
   playSimulation: () => void;
@@ -61,6 +70,14 @@ interface AppContextType {
   demoAck1Progress: number; // 0 to 1
   demoPacket2Progress: number; // 0 to 1
   demoAck2Progress: number; // 0 to 1
+
+  // Phase 3 Fundamentals States
+  selectedOsiLayer: number | null;
+  setSelectedOsiLayer: (layer: number | null) => void;
+  multipathFreq: number;
+  setMultipathFreq: (freq: number) => void;
+  simulateBitError: boolean;
+  setSimulateBitError: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -112,6 +129,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false);
   const toggleMobileSidebar = useCallback(() => setMobileSidebarOpen(prev => !prev), []);
 
+  // Collapsible Panels (Desktop & Mobile)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  const toggleSidebarCollapse = useCallback(() => setSidebarCollapsed(prev => !prev), []);
+  const [eventLogCollapsed, setEventLogCollapsed] = useState<boolean>(false);
+  const toggleEventLogCollapse = useCallback(() => setEventLogCollapsed(prev => !prev), []);
+
   // Completion State (initialize with default topic completed = false, or track in state)
   const [completedTopicIds, setCompletedTopicIds] = useState<Set<string>>(() => new Set<string>());
 
@@ -127,6 +150,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [simTime, setSimTime] = useState<number>(0);
   const [deliveredPacketsCount, setDeliveredPacketsCount] = useState<number>(0);
   const [events, setEvents] = useState<SimEvent[]>([]);
+
+  // Phase 3 Fundamentals States
+  const [selectedOsiLayer, setSelectedOsiLayer] = useState<number | null>(null);
+  const [multipathFreq, setMultipathFreq] = useState<number>(10.0);
+  const [simulateBitError, setSimulateBitError] = useState<boolean>(false);
 
   // Find active topic
   const selectedTopic = useMemo(() => {
@@ -158,11 +186,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [theme]);
 
-  // Listen for live simulation events dispatched by Multiple Access provider
+  // Listen for live simulation events with deduplication
   useEffect(() => {
     const handleSimEvent = (e: Event) => {
       const customEvt = (e as CustomEvent<SimEvent>).detail;
-      setEvents(prev => [customEvt, ...prev.slice(0, 49)]);
+      setEvents(prev => {
+        if (
+          prev.length > 0 &&
+          prev[0].type === customEvt.type &&
+          prev[0].source === customEvt.source &&
+          prev[0].destination === customEvt.destination &&
+          prev[0].info === customEvt.info &&
+          Math.abs(prev[0].timestamp - customEvt.timestamp) < 0.25
+        ) {
+          return prev;
+        }
+        return [customEvt, ...prev.slice(0, 49)];
+      });
     };
     window.addEventListener('WIRELESS_SIM_EVENT', handleSimEvent);
     return () => window.removeEventListener('WIRELESS_SIM_EVENT', handleSimEvent);
@@ -189,8 +229,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSimPlaying(false);
     setSimTime(0);
     setDeliveredPacketsCount(0);
+    setSelectedOsiLayer(null);
+    setSimulateBitError(false);
     const targetTopic = ALL_TOPICS.find(t => t.id === id);
-    if (targetTopic && (targetTopic.categoryId === 'multiple_access' || targetTopic.id === 'multiple-access-techniques-overview')) {
+    if (targetTopic && (targetTopic.categoryId === 'multiple_access' || targetTopic.id === 'multiple-access-techniques-overview' || targetTopic.isImplemented)) {
       setEvents([]);
     } else if (targetTopic) {
       setEvents(getPlaceholderEvents(targetTopic));
@@ -241,7 +283,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDeliveredPacketsCount(0);
     processedEventsRef.current.clear();
     lastTimestampRef.current = null;
-    if (isDemoActive) {
+    setSelectedOsiLayer(null);
+    if (isDemoActive || selectedTopic.categoryId === 'multiple_access' || selectedTopic.isImplemented) {
       setEvents([]);
     } else {
       setEvents(getPlaceholderEvents(selectedTopic));
@@ -262,6 +305,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const stepSimulation = useCallback(() => {
     setSimPlaying(false);
     lastTimestampRef.current = null;
+
+    if (selectedTopic.id === 'osi-model-basics') {
+      // Step advances one layer step (0.80s)
+      setSimTime(prev => Number((prev + 0.80).toFixed(2)));
+      return;
+    }
+
+    if (selectedTopic.id === 'pcm-voice-digitization') {
+      // Step advances one sample (1.20s per sample)
+      setSimTime(prev => Number((Math.floor(prev / 1.20 + 0.999) * 1.20).toFixed(2)));
+      return;
+    }
+
+    if (selectedTopic.id === 'multipath-free-space-loss') {
+      // Step advances by 0.40s
+      setSimTime(prev => Number((prev + 0.40).toFixed(2)));
+      return;
+    }
+
+    if (selectedTopic.id === 'crc-arq-error-control') {
+      // Step advances by 0.60s
+      setSimTime(prev => Number((prev + 0.60).toFixed(2)));
+      return;
+    }
 
     if (isMultipleAccessTopic && !isDemoActive) {
       setSimTime(prev => Number((prev + 0.50).toFixed(2)));
@@ -298,7 +365,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return nextTime;
     });
-  }, [isDemoActive, isMultipleAccessTopic]);
+  }, [isDemoActive, isMultipleAccessTopic, selectedTopic.id]);
 
   // Handle Event Triggers based on simTime
   useEffect(() => {
@@ -476,6 +543,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         mobileSidebarOpen,
         setMobileSidebarOpen,
         toggleMobileSidebar,
+        sidebarCollapsed,
+        setSidebarCollapsed,
+        toggleSidebarCollapse,
+        eventLogCollapsed,
+        setEventLogCollapsed,
+        toggleEventLogCollapse,
         canvasView,
         setCanvasView,
         theme,
@@ -483,6 +556,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         simPlaying,
         simSpeed,
         simTime,
+        setSimTime,
         deliveredPacketsCount,
         events,
         playSimulation,
@@ -495,6 +569,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         demoAck1Progress,
         demoPacket2Progress,
         demoAck2Progress,
+        selectedOsiLayer,
+        setSelectedOsiLayer,
+        multipathFreq,
+        setMultipathFreq,
+        simulateBitError,
+        setSimulateBitError,
       }}
     >
       {children}

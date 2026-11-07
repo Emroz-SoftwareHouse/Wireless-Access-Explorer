@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { ALL_TOPICS, CATEGORIES } from '../data/topics';
 import { CategoryId } from '../types';
 import { TopicSidebarItem } from './TopicSidebarItem';
-import { Search, X, BookOpen, Layers } from 'lucide-react';
+import { Search, X, BookOpen, Layers, PanelLeftClose, PanelLeftOpen, ChevronRight } from 'lucide-react';
 
 const CATEGORY_TABS: { id: CategoryId | 'all'; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -27,6 +27,8 @@ export const TopicSidebar: React.FC = () => {
     setActiveSubStepIndex,
     mobileSidebarOpen,
     setMobileSidebarOpen,
+    sidebarCollapsed,
+    toggleSidebarCollapse,
   } = useApp();
 
   // Filter topics by category and search query
@@ -104,26 +106,33 @@ export const TopicSidebar: React.FC = () => {
         </button>
       </div>
 
-      {/* 1. Search Box */}
-      <div className="p-3 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/30">
-        <div className="relative flex items-center">
-          <Search className="absolute left-3 h-4 w-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+      {/* 1. Search Box with Desktop Collapse Toggle */}
+      <div className="p-2.5 px-3 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/30 flex items-center justify-between gap-2">
+        <div className="relative flex-1 flex items-center">
+          <Search className="absolute left-2.5 h-3.5 w-3.5 text-slate-400 dark:text-slate-500 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search 30 topics..."
-            className="w-full rounded-xl bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 pl-9 pr-8 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors shadow-sm"
+            className="w-full rounded-lg bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 pl-8 pr-7 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors shadow-xs"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 p-0.5 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="absolute right-2 p-0.5 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-3 w-3" />
             </button>
           )}
         </div>
+        <button
+          onClick={toggleSidebarCollapse}
+          title="Collapse sidebar to compact rail"
+          className="hidden lg:flex p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-cyan-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors shrink-0"
+        >
+          <PanelLeftClose className="h-4 w-4" />
+        </button>
       </div>
 
       {/* 2. Status Dot Legend Banner */}
@@ -227,7 +236,60 @@ export const TopicSidebar: React.FC = () => {
       {/* Sidebar Footer Info */}
       <div className="p-3 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60 text-[11px] text-slate-500 flex items-center justify-between">
         <span className="font-mono">30 Topics Loaded</span>
-        <span className="text-cyan-600 dark:text-cyan-400/80 font-mono">Phase 2.6 Active</span>
+        <span className="text-cyan-600 dark:text-cyan-400/80 font-mono">Phase 3.5 Active</span>
+      </div>
+    </div>
+  );
+
+  const collapsedRailContent = (
+    <div className="flex flex-col items-center h-full py-2.5 px-1 bg-white dark:bg-[#080c17] text-slate-800 dark:text-slate-100 border-r border-slate-200 dark:border-slate-800 select-none w-14">
+      {/* Expand Button */}
+      <button
+        onClick={toggleSidebarCollapse}
+        title="Expand syllabus sidebar"
+        className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors mb-3"
+      >
+        <PanelLeftOpen className="h-4 w-4" />
+      </button>
+
+      {/* Mini Category Badges */}
+      <div className="flex flex-col items-center gap-2 flex-1 overflow-y-auto scrollbar-none w-full">
+        {CATEGORY_TABS.filter(t => t.id !== 'all').map((tab) => {
+          const cat = CATEGORIES[tab.id as CategoryId];
+          const isCatSelected = selectedCategory === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setSelectedCategory(tab.id);
+                if (sidebarCollapsed) toggleSidebarCollapse();
+              }}
+              title={`${cat.label} (${cat.sectionCode || ''})`}
+              className={`w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-mono font-bold transition-all relative ${
+                isCatSelected
+                  ? 'bg-cyan-500 text-slate-950 shadow-md ring-2 ring-cyan-400'
+                  : 'bg-slate-100 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+              }`}
+            >
+              {tab.id === 'fundamentals' && 'F'}
+              {tab.id === 'multiple_access' && 'MA'}
+              {tab.id === 'cordless' && '11.1'}
+              {tab.id === 'wll' && '11.2'}
+              {tab.id === 'wimax' && '11.3'}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Active Topic Indicator Dot */}
+      <div className="mt-auto pt-2 border-t border-slate-200 dark:border-slate-800 flex flex-col items-center gap-1 w-full text-center">
+        <div 
+          className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.9)] animate-pulse" 
+          title="Active topic running"
+        />
+        <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500">
+          30
+        </span>
       </div>
     </div>
   );
@@ -235,8 +297,10 @@ export const TopicSidebar: React.FC = () => {
   return (
     <>
       {/* Desktop Persistent Sidebar (>= lg) */}
-      <aside className="hidden lg:flex w-80 xl:w-96 border-r border-slate-200 dark:border-slate-800 h-full shrink-0">
-        {sidebarContent}
+      <aside className={`hidden lg:flex transition-all duration-200 ${
+        sidebarCollapsed ? 'w-14' : 'w-80 xl:w-96'
+      } border-r border-slate-200 dark:border-slate-800 h-full shrink-0`}>
+        {sidebarCollapsed ? collapsedRailContent : sidebarContent}
       </aside>
 
       {/* Mobile / Tablet Drawer (< lg) with animated slide-in and backdrop */}

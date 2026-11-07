@@ -53,26 +53,21 @@ const AppContent: React.FC = () => {
             </button>
           </div>
 
-          {/* Desktop Stage Split (>= lg): Interactive Network/Sequence Canvas + Overview Spec Card */}
-          <div className="hidden lg:flex flex-1 flex-row gap-3 min-h-[420px]">
-            {/* Center Canvas */}
-            <NetworkCanvas />
-
-            {/* Right Overview Card */}
-            <OverviewCard />
-          </div>
-
-          {/* Mobile Stage Split (< lg): Toggle between Canvas and OverviewCard */}
-          <div className="lg:hidden flex flex-col flex-1 gap-2.5 min-h-0">
-            {mobileTab === 'canvas' ? (
+          {/* Main Stage: Exactly single-mounted Canvas and OverviewCard */}
+          <div className="flex-1 flex flex-col lg:flex-row gap-2.5 sm:gap-3 min-h-[380px] overflow-hidden">
+            {/* Canvas Container: full width on mobile if canvas tab active, or flex-1 alongside OverviewCard on desktop */}
+            <div className={`flex-1 min-w-0 h-full flex flex-col min-h-0 ${mobileTab === 'canvas' ? 'flex' : 'hidden lg:flex'}`}>
               <NetworkCanvas />
-            ) : (
+            </div>
+
+            {/* Overview Card Container: full width on mobile if overview tab active, or side panel on desktop */}
+            <div className={`w-full lg:w-80 xl:w-96 shrink-0 h-full flex flex-col min-h-0 ${mobileTab === 'overview' ? 'flex' : 'hidden lg:flex'}`}>
               <OverviewCard />
-            )}
+            </div>
           </div>
 
           {/* Bottom Simulation Engine & Timestamped Event Log (Desktop always visible, mobile visible when on canvas tab) */}
-          <div className={`${mobileTab === 'canvas' ? 'block' : 'hidden lg:block'}`}>
+          <div className={`${mobileTab === 'canvas' ? 'block' : 'hidden lg:block'} shrink-0`}>
             <SimulationPanel />
           </div>
         </main>

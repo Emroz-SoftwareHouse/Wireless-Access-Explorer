@@ -81,6 +81,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Key Mechanism', value: 'Modular Protocol Decoupling' },
       { label: 'Wireless Scope', value: 'PHY (L1) and MAC/LLC (L2)' },
     ],
+    isImplemented: true,
   },
   {
     id: 'pcm-voice-digitization',
@@ -103,6 +104,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Bitrate', value: '64 kbps (Standard DS0)' },
       { label: 'Companding Laws', value: 'µ-law (US) / A-law (Europe)' },
     ],
+    isImplemented: true,
   },
   {
     id: 'multipath-free-space-loss',
@@ -125,6 +127,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Countermeasure', value: 'Equalization, FEC & Diversity' },
       { label: 'Channel Models', value: 'Rayleigh (NLOS) / Rician (LOS)' },
     ],
+    isImplemented: true,
   },
   {
     id: 'multiple-access-techniques-overview',
@@ -170,6 +173,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Error Handling', value: 'Go-Back-N / Selective Reject ARQ' },
       { label: 'Overhead Ratio', value: 'FCS (16-32 bits) + control header' },
     ],
+    isImplemented: true,
   },
 
   // --- MULTIPLE ACCESS SIMULATOR ---

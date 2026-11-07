@@ -49,7 +49,9 @@ export type EventType =
   | 'GRANT'
   | 'COLLISION'
   | 'RETRANSMIT'
-  | 'DESPREAD';
+  | 'DESPREAD'
+  | 'NACK'
+  | 'SAMPLE';
 
 export interface SimEvent {
   no: number;
@@ -63,7 +65,7 @@ export interface SimEvent {
 }
 
 export type SimSpeed = 0.5 | 1 | 2;
-export type CanvasViewMode = 'network' | 'sequence';
+export type CanvasViewMode = 'network' | 'sequence' | 'theory';
 export type AppTheme = 'dark' | 'light';
 
 // --- Multiple Access Engine Types (Phase 2) ---

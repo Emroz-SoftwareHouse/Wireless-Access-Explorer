@@ -3,7 +3,9 @@ import { useApp } from '../context/AppContext';
 import { EventType } from '../types';
 import { 
   ListOrdered,
-  Activity
+  Activity,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 const EVENT_TYPE_STYLES: Record<EventType, { badge: string; dot: string; label: string }> = {
@@ -67,6 +69,16 @@ const EVENT_TYPE_STYLES: Record<EventType, { badge: string; dot: string; label: 
     dot: 'bg-slate-500 dark:bg-slate-400',
     label: 'System Idle',
   },
+  NACK: {
+    badge: 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/40',
+    dot: 'bg-red-500 dark:bg-red-400',
+    label: 'NACK Burst',
+  },
+  SAMPLE: {
+    badge: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border-indigo-500/40',
+    dot: 'bg-indigo-500 dark:bg-indigo-400',
+    label: 'PCM Sample',
+  },
 };
 
 export const SimulationPanel: React.FC = () => {
@@ -75,54 +87,78 @@ export const SimulationPanel: React.FC = () => {
     isDemoActive,
     simTime,
     simPlaying,
+    eventLogCollapsed,
+    toggleEventLogCollapse,
   } = useApp();
 
   return (
-    <div className="h-56 sm:h-64 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#080c17] text-slate-800 dark:text-slate-100 flex flex-col shrink-0 select-none rounded-t-xl overflow-hidden shadow-xs transition-colors">
+    <div className={`border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#080c17] text-slate-800 dark:text-slate-100 flex flex-col shrink-0 select-none rounded-t-xl overflow-hidden shadow-xs transition-all duration-200 ${
+      eventLogCollapsed ? 'h-10' : 'h-52 sm:h-60'
+    }`}>
       {/* 1. Event Log Header Toolbar */}
-      <div className="h-10 border-b border-slate-200 dark:border-slate-800/90 bg-slate-50 dark:bg-slate-900/60 px-4 flex items-center justify-between gap-4">
+      <div 
+        onClick={toggleEventLogCollapse}
+        className="h-10 border-b border-slate-200 dark:border-slate-800/90 bg-slate-50 dark:bg-slate-900/60 px-3 sm:px-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-900/80 transition-colors select-none"
+      >
         {/* Left: Title & Captured count */}
-        <div className="flex items-center gap-2.5">
-          <ListOrdered className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-          <span className="text-xs font-mono font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+          <ListOrdered className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
+          <span className="text-xs font-mono font-bold text-slate-900 dark:text-white uppercase tracking-wider truncate">
             Event Log & Protocol Telemetry
           </span>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 tabular-nums">
-            {events.length} {events.length === 1 ? 'event' : 'events'} captured
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 tabular-nums shrink-0">
+            {events.length} captured
           </span>
         </div>
 
-        {/* Right: Live Telemetry Indicator & Clock Sync */}
-        <div className="flex items-center gap-3 text-xs font-mono">
-          <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+        {/* Right: Live Telemetry Indicator & Clock Sync & Collapse Toggle */}
+        <div className="flex items-center gap-2 sm:gap-3 text-xs font-mono shrink-0">
+          <div className="hidden sm:flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
             <Activity className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
             <span className="text-[11px]">
               {simPlaying ? 'Capturing Live Events' : 'Standby / Paused'}
             </span>
           </div>
 
-          <div className="h-3.5 w-px bg-slate-200 dark:bg-slate-800" />
+          <div className="hidden sm:block h-3.5 w-px bg-slate-200 dark:bg-slate-800" />
 
           <div className="text-[11px] text-slate-600 dark:text-slate-400">
             Clock: <strong className="text-cyan-600 dark:text-cyan-400 tabular-nums">{simTime.toFixed(2)}s</strong>
           </div>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleEventLogCollapse();
+            }}
+            title={eventLogCollapsed ? "Expand Event Log" : "Collapse Event Log"}
+            className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-cyan-400 transition-colors ml-1"
+          >
+            {eventLogCollapsed ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </button>
         </div>
       </div>
 
-      {/* 2. Color-Coded Protocol Legend Row */}
-      <div className="h-7 border-b border-slate-200 dark:border-slate-800/80 bg-slate-100/70 dark:bg-slate-950/40 px-4 flex items-center justify-between overflow-x-auto text-[10px] font-mono text-slate-600 dark:text-slate-400 scrollbar-none">
-        <span className="text-slate-500 uppercase font-semibold mr-2 shrink-0">
-          Legend:
-        </span>
-        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-          {Object.entries(EVENT_TYPE_STYLES).slice(0, 7).map(([typeKey, meta]) => (
-            <div key={typeKey} className="flex items-center gap-1.5">
-              <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-              <span className="text-slate-700 dark:text-slate-300">{meta.label}</span>
+      {!eventLogCollapsed && (
+        <>
+          {/* 2. Color-Coded Protocol Legend Row */}
+          <div className="h-7 border-b border-slate-200 dark:border-slate-800/80 bg-slate-100/70 dark:bg-slate-950/40 px-4 flex items-center justify-between overflow-x-auto text-[10px] font-mono text-slate-600 dark:text-slate-400 scrollbar-none shrink-0">
+            <span className="text-slate-500 uppercase font-semibold mr-2 shrink-0">
+              Legend:
+            </span>
+            <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+              {Object.entries(EVENT_TYPE_STYLES).slice(0, 7).map(([typeKey, meta]) => (
+                <div key={typeKey} className="flex items-center gap-1.5">
+                  <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+                  <span className="text-slate-700 dark:text-slate-300">{meta.label}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
       {/* 3. Timestamped Event Table */}
       <div className="flex-1 overflow-x-auto overflow-y-auto">
@@ -186,7 +222,9 @@ export const SimulationPanel: React.FC = () => {
           </tbody>
         </table>
       </div>
-    </div>
+    </>
+  )}
+</div>
   );
 };
 
