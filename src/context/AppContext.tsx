@@ -1,0 +1,511 @@
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { 
+  CategoryId, 
+  Topic, 
+  SimEvent, 
+  SimSpeed, 
+  CanvasViewMode, 
+  AppTheme 
+} from '../types';
+import { ALL_TOPICS } from '../data/topics';
+
+interface AppContextType {
+  // Navigation & Topics
+  selectedTopicId: string;
+  setSelectedTopicId: (id: string) => void;
+  selectedTopic: Topic;
+  selectedCategory: CategoryId | 'all';
+  setSelectedCategory: (category: CategoryId | 'all') => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  
+  // Progress & Completion
+  completedTopicIds: Set<string>;
+  toggleTopicCompleted: (id: string) => void;
+  totalTopics: number;
+  completedCount: number;
+  progressPercent: number;
+
+  // Mobile Drawer State
+  mobileSidebarOpen: boolean;
+  setMobileSidebarOpen: (open: boolean) => void;
+  toggleMobileSidebar: () => void;
+
+  // Active Sub-Step
+  activeSubStepIndex: number;
+  setActiveSubStepIndex: (index: number) => void;
+
+  // Canvas View Mode
+  canvasView: CanvasViewMode;
+  setCanvasView: (mode: CanvasViewMode) => void;
+
+  // Theme
+  theme: AppTheme;
+  toggleTheme: () => void;
+
+  // Simulation Engine (generic & reusable)
+  simPlaying: boolean;
+  simSpeed: SimSpeed;
+  simTime: number; // in seconds
+  deliveredPacketsCount: number;
+  events: SimEvent[];
+  playSimulation: () => void;
+  pauseSimulation: () => void;
+  stepSimulation: () => void;
+  resetSimulation: () => void;
+  setSimSpeed: (speed: SimSpeed) => void;
+  
+  // Demo specific helpers
+  isDemoActive: boolean;
+  demoPacket1Progress: number; // 0 to 1
+  demoAck1Progress: number; // 0 to 1
+  demoPacket2Progress: number; // 0 to 1
+  demoAck2Progress: number; // 0 to 1
+}
+
+const AppContext = createContext<AppContextType | null>(null);
+
+// Static placeholder dummy rows for non-demo topics
+function getPlaceholderEvents(topic: Topic): SimEvent[] {
+  return [
+    {
+      no: 1,
+      timeFormatted: '0.00s',
+      timestamp: 0.0,
+      source: 'Transmitter',
+      destination: 'Receiver',
+      type: 'SYSTEM_IDLE',
+      info: `Initial state for ${topic.title} [Phase 1 Skeleton]`,
+      sizeValue: 'Ready',
+    },
+    {
+      no: 2,
+      timeFormatted: '0.25s',
+      timestamp: 0.25,
+      source: 'Control Unit',
+      destination: 'Channel',
+      type: 'CONTROL_POLL',
+      info: `Parameter setup: ${topic.specs[0]?.label || 'Config'} = ${topic.specs[0]?.value || 'Default'}`,
+      sizeValue: '32 b',
+    },
+    {
+      no: 3,
+      timeFormatted: '0.50s',
+      timestamp: 0.5,
+      source: 'Engine',
+      destination: 'Scheduler',
+      type: 'BEACON',
+      info: 'Simulation engine hooked and awaiting Phase 2 event timeline logic',
+      sizeValue: '64 b',
+    },
+  ];
+}
+
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Topics & Navigation
+  const [selectedTopicId, setSelectedTopicIdState] = useState<string>('multiple-access-techniques-overview');
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeSubStepIndex, setActiveSubStepIndex] = useState<number>(0);
+
+  // Mobile Drawer State
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false);
+  const toggleMobileSidebar = useCallback(() => setMobileSidebarOpen(prev => !prev), []);
+
+  // Completion State (initialize with default topic completed = false, or track in state)
+  const [completedTopicIds, setCompletedTopicIds] = useState<Set<string>>(() => new Set<string>());
+
+  // Canvas View Mode
+  const [canvasView, setCanvasView] = useState<CanvasViewMode>('network');
+
+  // Theme (default dark)
+  const [theme, setTheme] = useState<AppTheme>('dark');
+
+  // Simulation Engine State
+  const [simPlaying, setSimPlaying] = useState<boolean>(false);
+  const [simSpeed, setSimSpeed] = useState<SimSpeed>(1);
+  const [simTime, setSimTime] = useState<number>(0);
+  const [deliveredPacketsCount, setDeliveredPacketsCount] = useState<number>(0);
+  const [events, setEvents] = useState<SimEvent[]>([]);
+
+  // Find active topic
+  const selectedTopic = useMemo(() => {
+    return ALL_TOPICS.find(t => t.id === selectedTopicId) || ALL_TOPICS[3];
+  }, [selectedTopicId]);
+
+  const isMultipleAccessTopic = selectedTopic.categoryId === 'multiple_access' || selectedTopic.id === 'multiple-access-techniques-overview';
+  const isDemoActive = selectedTopic.id === 'multiple-access-techniques-overview';
+
+  // Toggle Theme handler
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      if (next === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      return next;
+    });
+  }, []);
+
+  // Sync theme with DOM initially
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+
+  // Listen for live simulation events dispatched by Multiple Access provider
+  useEffect(() => {
+    const handleSimEvent = (e: Event) => {
+      const customEvt = (e as CustomEvent<SimEvent>).detail;
+      setEvents(prev => [customEvt, ...prev.slice(0, 49)]);
+    };
+    window.addEventListener('WIRELESS_SIM_EVENT', handleSimEvent);
+    return () => window.removeEventListener('WIRELESS_SIM_EVENT', handleSimEvent);
+  }, []);
+
+  // Toggle Topic Completed
+  const toggleTopicCompleted = useCallback((id: string) => {
+    setCompletedTopicIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  // Select Topic handler
+  const setSelectedTopicId = useCallback((id: string) => {
+    setSelectedTopicIdState(id);
+    setActiveSubStepIndex(0);
+    // Reset simulation on topic switch
+    setSimPlaying(false);
+    setSimTime(0);
+    setDeliveredPacketsCount(0);
+    const targetTopic = ALL_TOPICS.find(t => t.id === id);
+    if (targetTopic && (targetTopic.categoryId === 'multiple_access' || targetTopic.id === 'multiple-access-techniques-overview')) {
+      setEvents([]);
+    } else if (targetTopic) {
+      setEvents(getPlaceholderEvents(targetTopic));
+    }
+  }, []);
+
+  // Compute Demo Packet & ACK Travel Progress
+  // Packet 1 travels from t = 0.00s to t = 1.80s (Laptop -> Base Station)
+  const demoPacket1Progress = useMemo(() => {
+    if (!isDemoActive) return 0;
+    if (simTime < 0) return 0;
+    if (simTime >= 1.80) return 1;
+    return Math.min(1, Math.max(0, simTime / 1.80));
+  }, [isDemoActive, simTime]);
+
+  // ACK 1 travels from t = 1.80s to t = 3.00s (Base Station -> Laptop)
+  const demoAck1Progress = useMemo(() => {
+    if (!isDemoActive) return 0;
+    if (simTime < 1.80) return 0;
+    if (simTime >= 3.00) return 1;
+    return Math.min(1, Math.max(0, (simTime - 1.80) / 1.20));
+  }, [isDemoActive, simTime]);
+
+  // Packet 2 travels from t = 3.20s to t = 5.00s (Phone -> Base Station)
+  const demoPacket2Progress = useMemo(() => {
+    if (!isDemoActive) return 0;
+    if (simTime < 3.20) return 0;
+    if (simTime >= 5.00) return 1;
+    return Math.min(1, Math.max(0, (simTime - 3.20) / 1.80));
+  }, [isDemoActive, simTime]);
+
+  // ACK 2 travels from t = 5.00s to t = 6.20s (Base Station -> Phone)
+  const demoAck2Progress = useMemo(() => {
+    if (!isDemoActive) return 0;
+    if (simTime < 5.00) return 0;
+    if (simTime >= 6.20) return 1;
+    return Math.min(1, Math.max(0, (simTime - 5.00) / 1.20));
+  }, [isDemoActive, simTime]);
+
+  // Simulation Clock Runner using requestAnimationFrame for ultra-smooth precision
+  const lastTimestampRef = useRef<number | null>(null);
+  const processedEventsRef = useRef<Set<number>>(new Set());
+
+  // Reset simulation handler
+  const resetSimulation = useCallback(() => {
+    setSimPlaying(false);
+    setSimTime(0);
+    setDeliveredPacketsCount(0);
+    processedEventsRef.current.clear();
+    lastTimestampRef.current = null;
+    if (isDemoActive) {
+      setEvents([]);
+    } else {
+      setEvents(getPlaceholderEvents(selectedTopic));
+    }
+  }, [isDemoActive, selectedTopic]);
+
+  const pauseSimulation = useCallback(() => {
+    setSimPlaying(false);
+    lastTimestampRef.current = null;
+  }, []);
+
+  const playSimulation = useCallback(() => {
+    setSimPlaying(true);
+    lastTimestampRef.current = null;
+  }, []);
+
+  // Step Simulation handler: Advances to next discrete event breakpoint
+  const stepSimulation = useCallback(() => {
+    setSimPlaying(false);
+    lastTimestampRef.current = null;
+
+    if (isMultipleAccessTopic && !isDemoActive) {
+      setSimTime(prev => Number((prev + 0.50).toFixed(2)));
+      return;
+    }
+
+    if (!isDemoActive) {
+      setSimTime(prev => Number((prev + 0.25).toFixed(2)));
+      return;
+    }
+
+    setSimTime(prev => {
+      let nextTime = prev;
+      if (prev < 0.001) {
+        nextTime = 1.80; // P1 arrives at BS
+      } else if (prev < 1.799) {
+        nextTime = 1.80;
+      } else if (prev < 2.999) {
+        nextTime = 3.00; // ACK1 arrives at STA-1
+      } else if (prev < 3.199) {
+        nextTime = 3.20; // P2 starts
+      } else if (prev < 4.999) {
+        nextTime = 5.00; // P2 arrives at BS
+      } else if (prev < 6.199) {
+        nextTime = 6.20; // ACK2 arrives at STA-2
+      } else if (prev < 6.399) {
+        nextTime = 6.40; // Frame done
+      } else {
+        nextTime = 0.00;
+        processedEventsRef.current.clear();
+        setDeliveredPacketsCount(0);
+        setEvents([]);
+        return 0;
+      }
+      return nextTime;
+    });
+  }, [isDemoActive, isMultipleAccessTopic]);
+
+  // Handle Event Triggers based on simTime
+  useEffect(() => {
+    if (!isDemoActive) return;
+
+    // Check milestones and emit events only once per cycle
+    const p = processedEventsRef.current;
+
+    // Event 1 at t >= 0.00s: Laptop sends Packet 1
+    if (simTime >= 0.0 && !p.has(1)) {
+      p.add(1);
+      const e1: SimEvent = {
+        no: 1,
+        timeFormatted: '0.00s',
+        timestamp: 0.0,
+        source: 'Laptop (STA-1)',
+        destination: 'Base Station (BS-01)',
+        type: 'DATA_PACKET',
+        info: 'Uplink Burst #1 (Slot 1) transmitted · RF Carrier 890.2 MHz (1.8s transit)',
+        sizeValue: '240 bits',
+      };
+      setEvents(prev => [e1, ...prev.filter(item => item.no !== 1)]);
+    }
+
+    // Event 2 at t >= 1.80s: Packet 1 delivered to BS, BS emits ACK 1
+    if (simTime >= 1.80 && !p.has(2)) {
+      p.add(2);
+      setDeliveredPacketsCount(1);
+      const e2: SimEvent = {
+        no: 2,
+        timeFormatted: '1.80s',
+        timestamp: 1.8,
+        source: 'Base Station (BS-01)',
+        destination: 'Laptop (STA-1)',
+        type: 'ACK_BURST',
+        info: 'Packet #1 decoded at BS · CRC VALID · Dispatched ACK burst to STA-1',
+        sizeValue: '16 bits',
+      };
+      setEvents(prev => [e2, ...prev.filter(item => item.no !== 2)]);
+    }
+
+    // Event 2b at t >= 3.00s: ACK 1 delivered to Laptop! Round trip complete
+    if (simTime >= 3.00 && !p.has(25)) {
+      p.add(25);
+      const e2b: SimEvent = {
+        no: 3,
+        timeFormatted: '3.00s',
+        timestamp: 3.0,
+        source: 'Laptop (STA-1)',
+        destination: 'Base Station (BS-01)',
+        type: 'SYNCHRONIZE',
+        info: 'ACK #1 received at STA-1 · Round-trip transaction verified (3.0s RTT)',
+        sizeValue: 'RTT Confirmed',
+      };
+      setEvents(prev => [e2b, ...prev.filter(item => item.no !== 3)]);
+    }
+
+    // Event 3 at t >= 3.20s: Packet 2 sent by Phone
+    if (simTime >= 3.20 && !p.has(3)) {
+      p.add(3);
+      const e3: SimEvent = {
+        no: 4,
+        timeFormatted: '3.20s',
+        timestamp: 3.2,
+        source: 'Smartphone (STA-2)',
+        destination: 'Base Station (BS-01)',
+        type: 'DATA_PACKET',
+        info: 'Uplink Burst #2 (Slot 2) transmitted · RF Carrier 890.2 MHz (1.8s transit)',
+        sizeValue: '240 bits',
+      };
+      setEvents(prev => [e3, ...prev.filter(item => item.no !== 4)]);
+    }
+
+    // Event 4 at t >= 5.00s: Packet 2 delivered to BS, BS emits ACK 2
+    if (simTime >= 5.00 && !p.has(4)) {
+      p.add(4);
+      setDeliveredPacketsCount(2);
+      const e4: SimEvent = {
+        no: 5,
+        timeFormatted: '5.00s',
+        timestamp: 5.0,
+        source: 'Base Station (BS-01)',
+        destination: 'Smartphone (STA-2)',
+        type: 'ACK_BURST',
+        info: 'Packet #2 decoded at BS · CRC VALID · Dispatched ACK burst to STA-2',
+        sizeValue: '16 bits',
+      };
+      setEvents(prev => [e4, ...prev.filter(item => item.no !== 5)]);
+    }
+
+    // Event 4b at t >= 6.20s: ACK 2 delivered to Smartphone!
+    if (simTime >= 6.20 && !p.has(45)) {
+      p.add(45);
+      const e4b: SimEvent = {
+        no: 6,
+        timeFormatted: '6.20s',
+        timestamp: 6.2,
+        source: 'Smartphone (STA-2)',
+        destination: 'Base Station (BS-01)',
+        type: 'SYNCHRONIZE',
+        info: 'ACK #2 received at STA-2 · Round-trip transaction verified (3.0s RTT)',
+        sizeValue: 'RTT Confirmed',
+      };
+      setEvents(prev => [e4b, ...prev.filter(item => item.no !== 6)]);
+    }
+
+    // Event 5 at t >= 6.40s: Frame completed, pause
+    if (simTime >= 6.40 && !p.has(5)) {
+      p.add(5);
+      const e5: SimEvent = {
+        no: 7,
+        timeFormatted: '6.40s',
+        timestamp: 6.4,
+        source: 'Base Station (BS-01)',
+        destination: 'All Subscribers',
+        type: 'SYNCHRONIZE',
+        info: 'TDMA frame cycle complete · 2/2 two-way round-trips verified',
+        sizeValue: 'Frame End',
+      };
+      setEvents(prev => [e5, ...prev.filter(item => item.no !== 7)]);
+      setSimPlaying(false);
+    }
+  }, [simTime, isDemoActive]);
+
+  // Animation frame loop
+  useEffect(() => {
+    if (!simPlaying) return;
+
+    let animId: number;
+
+    const tick = (now: number) => {
+      if (lastTimestampRef.current === null) {
+        lastTimestampRef.current = now;
+      }
+      const deltaSec = (now - lastTimestampRef.current) / 1000;
+      lastTimestampRef.current = now;
+
+      setSimTime(prev => {
+        const nextTime = prev + deltaSec * simSpeed;
+        if (isDemoActive && nextTime >= 6.45) {
+          return 6.40;
+        }
+        return nextTime;
+      });
+
+      animId = requestAnimationFrame(tick);
+    };
+
+    animId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animId);
+  }, [simPlaying, simSpeed, isDemoActive]);
+
+  // Overall Learning Progress calculations
+  const totalTopics = ALL_TOPICS.length;
+  const completedCount = completedTopicIds.size;
+  const progressPercent = Math.round((completedCount / totalTopics) * 100);
+
+  return (
+    <AppContext.Provider
+      value={{
+        selectedTopicId,
+        setSelectedTopicId,
+        selectedTopic,
+        selectedCategory,
+        setSelectedCategory,
+        searchQuery,
+        setSearchQuery,
+        completedTopicIds,
+        toggleTopicCompleted,
+        totalTopics,
+        completedCount,
+        progressPercent,
+        activeSubStepIndex,
+        setActiveSubStepIndex,
+        mobileSidebarOpen,
+        setMobileSidebarOpen,
+        toggleMobileSidebar,
+        canvasView,
+        setCanvasView,
+        theme,
+        toggleTheme,
+        simPlaying,
+        simSpeed,
+        simTime,
+        deliveredPacketsCount,
+        events,
+        playSimulation,
+        pauseSimulation,
+        stepSimulation,
+        resetSimulation,
+        setSimSpeed,
+        isDemoActive,
+        demoPacket1Progress,
+        demoAck1Progress,
+        demoPacket2Progress,
+        demoAck2Progress,
+      }}
+    >
+      {children}
+    </AppContext.Provider>
+  );
+};
+
+export const useApp = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useApp must be used within an AppProvider');
+  }
+  return context;
+};

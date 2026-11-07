@@ -1,0 +1,6 @@
+{
+  "name": "Wireless Access Explorer",
+  "description": "Interactive learning explorer for Chapter 11: Cordless Systems and Wireless Local Loop (Stallings, Wireless Communications and Networks, 2nd ed).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
