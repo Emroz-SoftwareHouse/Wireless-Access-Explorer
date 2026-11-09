@@ -148,7 +148,7 @@ export const MultipleAccessDemoCanvas: React.FC = () => {
 
   // Network Topology View
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 select-none">
+    <div className="relative w-full h-full flex flex-col items-center justify-center p-2 sm:p-6 select-none">
       {/* Background Subtle Radar Effect */}
       <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
         <div className="w-96 h-96 rounded-full border border-cyan-500/40" />
@@ -157,11 +157,11 @@ export const MultipleAccessDemoCanvas: React.FC = () => {
       </div>
 
       {/* Interactive Topology Container */}
-      <div className="relative z-10 w-full max-w-2xl flex items-center justify-between px-2 sm:px-6 py-4 my-auto">
+      <div className="relative z-10 w-full max-w-2xl flex items-center justify-between px-1 sm:px-6 py-2 sm:py-4 my-auto">
         {/* Node 1: Laptop (Client 1) */}
         <div className="flex flex-col items-center">
           <div
-            className={`relative flex h-20 w-20 sm:h-24 sm:w-24 flex-col items-center justify-center rounded-2xl border transition-all duration-300 ${
+            className={`relative flex h-14 w-14 sm:h-24 sm:w-24 flex-col items-center justify-center rounded-xl sm:rounded-2xl border transition-all duration-300 ${
               isAck1Delivered
                 ? 'bg-cyan-50 dark:bg-cyan-950/70 border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.5)] ring-2 ring-cyan-400/50'
                 : isP1Transmitting
@@ -169,145 +169,164 @@ export const MultipleAccessDemoCanvas: React.FC = () => {
                 : 'bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700/80 hover:border-slate-400'
             }`}
           >
-            <LaptopIcon size={36} color={isP1Transmitting || isAck1Delivered ? '#06b6d4' : '#94a3b8'} glow={isP1Transmitting} />
-            <span className="text-[10px] font-mono font-bold text-slate-900 dark:text-white mt-1">STA-1 (Laptop)</span>
-            <span className="text-[8px] font-mono text-cyan-600 dark:text-cyan-400 font-semibold">Slot 1 · Uplink</span>
+            <div className="block sm:hidden">
+              <LaptopIcon size={24} color={isP1Transmitting || isAck1Delivered ? '#06b6d4' : '#94a3b8'} glow={isP1Transmitting} />
+            </div>
+            <div className="hidden sm:block">
+              <LaptopIcon size={36} color={isP1Transmitting || isAck1Delivered ? '#06b6d4' : '#94a3b8'} glow={isP1Transmitting} />
+            </div>
+            <span className="text-[9px] sm:text-[10px] font-mono font-bold text-slate-900 dark:text-white mt-0.5 sm:mt-1 truncate max-w-[65px] sm:max-w-none text-center">
+              <span className="sm:hidden">STA-1</span>
+              <span className="hidden sm:inline">STA-1 (Laptop)</span>
+            </span>
+            <span className="text-[7px] sm:text-[8px] font-mono text-cyan-600 dark:text-cyan-400 font-semibold truncate">
+              <span className="sm:hidden">S1 · Up</span>
+              <span className="hidden sm:inline">Slot 1 · Uplink</span>
+            </span>
 
             {/* Transmission wave ring when active */}
             {isP1Transmitting && (
-              <span className="absolute -inset-1.5 rounded-2xl border border-cyan-400/40 animate-ping pointer-events-none" />
+              <span className="absolute -inset-1 sm:-inset-1.5 rounded-xl sm:rounded-2xl border border-cyan-400/40 animate-ping pointer-events-none" />
             )}
 
             {/* ACK received badge */}
             {isAck1Delivered && (
-              <span className="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-mono font-bold text-[8px] flex items-center gap-0.5 shadow-md">
-                <CheckCircle2 className="h-2.5 w-2.5" />
+              <span className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded-full bg-emerald-500 text-slate-950 font-mono font-bold text-[7px] sm:text-[8px] flex items-center gap-0.5 shadow-md">
+                <CheckCircle2 className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
                 <span>ACK ✓</span>
               </span>
             )}
           </div>
           <div className="mt-1 text-center">
-            <span className="text-[9px] font-mono text-slate-500">
-              {isAck1Delivered ? 'ACK Received ✓' : isP1Delivered ? 'Awaiting ACK...' : isP1Transmitting ? 'Sending Data...' : 'Queued (t=0s)'}
+            <span className="text-[8px] sm:text-[9px] font-mono text-slate-500">
+              {isAck1Delivered ? 'ACK ✓' : isP1Delivered ? 'Wait ACK' : isP1Transmitting ? 'Sending...' : 'Queued'}
             </span>
           </div>
         </div>
 
         {/* Transmission Channel 1 (Laptop <-> BS) */}
-        <div className="flex-1 mx-2 sm:mx-4 flex flex-col items-center relative">
-          <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full relative overflow-visible flex items-center">
+        <div className="flex-1 mx-1.5 sm:mx-4 flex flex-col items-center relative min-w-0">
+          <div className="w-full h-1.5 sm:h-2 bg-slate-200 dark:bg-slate-800 rounded-full relative overflow-visible flex items-center">
             {/* Guide line */}
             <div className="w-full h-full bg-gradient-to-r from-cyan-500/40 to-purple-500/40 rounded-full" />
             
             {/* 1. Animated Forward Data Packet: Laptop -> BS (t=0.00s to 1.80s) */}
             {isP1Transmitting && (
               <motion.div
-                className="absolute -top-3.5 h-7 px-2 rounded-lg bg-cyan-400 text-slate-950 flex items-center justify-center font-mono font-bold text-[9px] shadow-[0_0_12px_#22d3ee] border border-cyan-200 z-20 whitespace-nowrap"
+                className="absolute -top-3 sm:-top-3.5 h-6 sm:h-7 px-1.5 sm:px-2 rounded-md sm:rounded-lg bg-cyan-400 text-slate-950 flex items-center justify-center font-mono font-black text-[10px] sm:text-[11px] shadow-[0_0_14px_#22d3ee] border-2 border-cyan-100 z-20 whitespace-nowrap"
                 style={{
                   left: `${demoPacket1Progress * 100}%`,
                   transform: 'translateX(-50%)',
                 }}
               >
-                DATA [240b]
+                DATA
               </motion.div>
             )}
 
             {/* 2. Animated Return Trip ACK Packet: BS -> Laptop (t=1.80s to 3.00s) */}
             {isAck1Transmitting && (
               <motion.div
-                className="absolute -top-3.5 h-7 px-2 rounded-lg bg-emerald-500 text-slate-950 flex items-center justify-center font-mono font-bold text-[9px] shadow-[0_0_14px_#10b981] border border-emerald-200 z-30 whitespace-nowrap"
+                className="absolute -top-3 sm:-top-3.5 h-6 sm:h-7 px-1.5 sm:px-2 rounded-md sm:rounded-lg bg-emerald-500 text-slate-950 flex items-center justify-center font-mono font-black text-[10px] sm:text-[11px] shadow-[0_0_16px_#10b981] border-2 border-emerald-100 z-30 whitespace-nowrap"
                 style={{
                   left: `${(1 - demoAck1Progress) * 100}%`,
                   transform: 'translateX(-50%)',
                 }}
               >
-                ACK [16b]
+                ACK ✓
               </motion.div>
             )}
 
             {isAck1Delivered && (
-              <div className="absolute left-0 -top-2.5 h-5 w-5 rounded-full bg-emerald-500/20 border border-emerald-500 text-emerald-600 dark:text-emerald-300 flex items-center justify-center">
-                <CheckCircle2 className="h-3 w-3" />
+              <div className="absolute left-0 -top-2 sm:-top-2.5 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-emerald-500/20 border border-emerald-500 text-emerald-600 dark:text-emerald-300 flex items-center justify-center">
+                <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
               </div>
             )}
           </div>
-          <span className="text-[9px] font-mono text-slate-500 mt-2">
-            Link 1: {isP1Transmitting ? 'Data (1.8s)' : isAck1Transmitting ? 'ACK Return (1.2s)' : isAck1Delivered ? 'Round-trip OK' : 'Idle'}
+          <span className="text-[7.5px] sm:text-[9px] font-mono text-slate-500 mt-1 sm:mt-2 truncate">
+            {isP1Transmitting ? 'Data (1.8s)' : isAck1Transmitting ? 'ACK (1.2s)' : isAck1Delivered ? 'OK' : 'Idle'}
           </span>
         </div>
 
         {/* Center Node: Base Station (Coordinator) */}
         <div className="flex flex-col items-center">
           <div
-            className={`relative flex h-24 w-24 sm:h-28 sm:w-28 flex-col items-center justify-center rounded-2xl border transition-all duration-300 ${
+            className={`relative flex h-16 w-16 sm:h-28 sm:w-28 flex-col items-center justify-center rounded-xl sm:rounded-2xl border transition-all duration-300 ${
               deliveredPacketsCount > 0 || isP1Transmitting || isP2Transmitting
                 ? 'bg-purple-50 dark:bg-purple-950/60 border-purple-400 shadow-[0_0_25px_rgba(168,85,247,0.4)] ring-2 ring-purple-400/40'
                 : 'bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700/80'
             }`}
           >
-            <BaseStationIcon size={44} color="#a855f7" glow={deliveredPacketsCount > 0} />
-            <span className="text-[11px] font-mono font-bold text-slate-900 dark:text-white mt-0.5">BS-01 (Tower)</span>
-            <span className="text-[8px] font-mono text-purple-700 dark:text-purple-300 font-semibold">Central Hub</span>
+            <div className="block sm:hidden">
+              <BaseStationIcon size={26} color="#a855f7" glow={deliveredPacketsCount > 0} />
+            </div>
+            <div className="hidden sm:block">
+              <BaseStationIcon size={44} color="#a855f7" glow={deliveredPacketsCount > 0} />
+            </div>
+            <span className="text-[9px] sm:text-[11px] font-mono font-bold text-slate-900 dark:text-white mt-0.5">
+              <span className="sm:hidden">BS-01</span>
+              <span className="hidden sm:inline">BS-01 (Tower)</span>
+            </span>
+            <span className="hidden sm:block text-[8px] font-mono text-purple-700 dark:text-purple-300 font-semibold">Central Hub</span>
 
             {/* Signal Reception Halo */}
             {(isP1Transmitting || isP2Transmitting || isAck1Transmitting || isAck2Transmitting) && (
-              <span className="absolute -inset-2 rounded-2xl border border-purple-400/30 animate-pulse pointer-events-none" />
+              <span className="absolute -inset-1 sm:-inset-2 rounded-xl sm:rounded-2xl border border-purple-400/30 animate-pulse pointer-events-none" />
             )}
           </div>
           <div className="mt-1 text-center">
-            <span className="text-[9px] font-mono text-purple-600 dark:text-purple-400 font-semibold">
-              Delivered: {deliveredPacketsCount} / 2
+            <span className="text-[8px] sm:text-[9px] font-mono text-purple-600 dark:text-purple-400 font-semibold">
+              Delivered: {deliveredPacketsCount}/2
             </span>
           </div>
         </div>
 
         {/* Transmission Channel 2 (BS <-> Phone) */}
-        <div className="flex-1 mx-2 sm:mx-4 flex flex-col items-center relative">
-          <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full relative overflow-visible flex items-center">
+        <div className="flex-1 mx-1.5 sm:mx-4 flex flex-col items-center relative min-w-0">
+          <div className="w-full h-1.5 sm:h-2 bg-slate-200 dark:bg-slate-800 rounded-full relative overflow-visible flex items-center">
             {/* Guide line */}
             <div className="w-full h-full bg-gradient-to-r from-purple-500/40 to-emerald-500/40 rounded-full" />
             
             {/* 1. Animated Forward Data Packet: Phone -> BS (t=3.20s to 5.00s) */}
             {isP2Transmitting && (
               <motion.div
-                className="absolute -top-3.5 h-7 px-2 rounded-lg bg-emerald-400 text-slate-950 flex items-center justify-center font-mono font-bold text-[9px] shadow-[0_0_12px_#34d399] border border-emerald-200 z-20 whitespace-nowrap"
+                className="absolute -top-3 sm:-top-3.5 h-6 sm:h-7 px-1.5 sm:px-2 rounded-md sm:rounded-lg bg-emerald-400 text-slate-950 flex items-center justify-center font-mono font-black text-[10px] sm:text-[11px] shadow-[0_0_14px_#34d399] border-2 border-emerald-100 z-20 whitespace-nowrap"
                 style={{
                   right: `${demoPacket2Progress * 100}%`,
                   transform: 'translateX(50%)',
                 }}
               >
-                DATA [240b]
+                DATA
               </motion.div>
             )}
 
             {/* 2. Animated Return Trip ACK Packet: BS -> Phone (t=5.00s to 6.20s) */}
             {isAck2Transmitting && (
               <motion.div
-                className="absolute -top-3.5 h-7 px-2 rounded-lg bg-emerald-500 text-slate-950 flex items-center justify-center font-mono font-bold text-[9px] shadow-[0_0_14px_#10b981] border border-emerald-200 z-30 whitespace-nowrap"
+                className="absolute -top-3 sm:-top-3.5 h-6 sm:h-7 px-1.5 sm:px-2 rounded-md sm:rounded-lg bg-emerald-500 text-slate-950 flex items-center justify-center font-mono font-black text-[10px] sm:text-[11px] shadow-[0_0_16px_#10b981] border-2 border-emerald-100 z-30 whitespace-nowrap"
                 style={{
                   right: `${(1 - demoAck2Progress) * 100}%`,
                   transform: 'translateX(50%)',
                 }}
               >
-                ACK [16b]
+                ACK ✓
               </motion.div>
             )}
 
             {isAck2Delivered && (
-              <div className="absolute right-0 -top-2.5 h-5 w-5 rounded-full bg-emerald-500/20 border border-emerald-500 text-emerald-600 dark:text-emerald-300 flex items-center justify-center">
-                <CheckCircle2 className="h-3 w-3" />
+              <div className="absolute right-0 -top-2 sm:-top-2.5 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-emerald-500/20 border border-emerald-500 text-emerald-600 dark:text-emerald-300 flex items-center justify-center">
+                <CheckCircle2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
               </div>
             )}
           </div>
-          <span className="text-[9px] font-mono text-slate-500 mt-2">
-            Link 2: {isP2Transmitting ? 'Data (1.8s)' : isAck2Transmitting ? 'ACK Return (1.2s)' : isAck2Delivered ? 'Round-trip OK' : 'Idle'}
+          <span className="text-[7.5px] sm:text-[9px] font-mono text-slate-500 mt-1 sm:mt-2 truncate">
+            {isP2Transmitting ? 'Data (1.8s)' : isAck2Transmitting ? 'ACK (1.2s)' : isAck2Delivered ? 'OK' : 'Idle'}
           </span>
         </div>
 
         {/* Node 2: Smartphone (Client 2) */}
         <div className="flex flex-col items-center">
           <div
-            className={`relative flex h-20 w-20 sm:h-24 sm:w-24 flex-col items-center justify-center rounded-2xl border transition-all duration-300 ${
+            className={`relative flex h-14 w-14 sm:h-24 sm:w-24 flex-col items-center justify-center rounded-xl sm:rounded-2xl border transition-all duration-300 ${
               isAck2Delivered
                 ? 'bg-emerald-50 dark:bg-emerald-950/70 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.5)] ring-2 ring-emerald-400/50'
                 : isP2Transmitting
@@ -315,26 +334,37 @@ export const MultipleAccessDemoCanvas: React.FC = () => {
                 : 'bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-700/80 hover:border-slate-400'
             }`}
           >
-            <SmartphoneIcon size={36} color={isP2Transmitting || isAck2Delivered ? '#10b981' : '#94a3b8'} glow={isP2Transmitting} />
-            <span className="text-[10px] font-mono font-bold text-slate-900 dark:text-white mt-1">STA-2 (Phone)</span>
-            <span className="text-[8px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">Slot 2 · Uplink</span>
+            <div className="block sm:hidden">
+              <SmartphoneIcon size={24} color={isP2Transmitting || isAck2Delivered ? '#10b981' : '#94a3b8'} glow={isP2Transmitting} />
+            </div>
+            <div className="hidden sm:block">
+              <SmartphoneIcon size={36} color={isP2Transmitting || isAck2Delivered ? '#10b981' : '#94a3b8'} glow={isP2Transmitting} />
+            </div>
+            <span className="text-[9px] sm:text-[10px] font-mono font-bold text-slate-900 dark:text-white mt-0.5 sm:mt-1 truncate max-w-[65px] sm:max-w-none text-center">
+              <span className="sm:hidden">STA-2</span>
+              <span className="hidden sm:inline">STA-2 (Phone)</span>
+            </span>
+            <span className="text-[7px] sm:text-[8px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold truncate">
+              <span className="sm:hidden">S2 · Up</span>
+              <span className="hidden sm:inline">Slot 2 · Uplink</span>
+            </span>
 
             {/* Transmission wave ring when active */}
             {isP2Transmitting && (
-              <span className="absolute -inset-1.5 rounded-2xl border border-emerald-400/40 animate-ping pointer-events-none" />
+              <span className="absolute -inset-1 sm:-inset-1.5 rounded-xl sm:rounded-2xl border border-emerald-400/40 animate-ping pointer-events-none" />
             )}
 
             {/* ACK received badge */}
             {isAck2Delivered && (
-              <span className="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-mono font-bold text-[8px] flex items-center gap-0.5 shadow-md">
-                <CheckCircle2 className="h-2.5 w-2.5" />
+              <span className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded-full bg-emerald-500 text-slate-950 font-mono font-bold text-[7px] sm:text-[8px] flex items-center gap-0.5 shadow-md">
+                <CheckCircle2 className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
                 <span>ACK ✓</span>
               </span>
             )}
           </div>
           <div className="mt-1 text-center">
-            <span className="text-[9px] font-mono text-slate-500">
-              {isAck2Delivered ? 'ACK Received ✓' : isP2Delivered ? 'Awaiting ACK...' : isP2Transmitting ? 'Sending Data...' : 'Queued (t=3.2s)'}
+            <span className="text-[8px] sm:text-[9px] font-mono text-slate-500">
+              {isAck2Delivered ? 'ACK ✓' : isP2Delivered ? 'Wait ACK' : isP2Transmitting ? 'Sending...' : 'Queued'}
             </span>
           </div>
         </div>

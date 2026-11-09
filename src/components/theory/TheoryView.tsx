@@ -303,6 +303,174 @@ const THEORY_DATABASE: Record<string, TopicTheory> = {
       'Explain why pure contention protocols are unsuitable for voice or real-time multimedia wireless traffic.',
     ],
   },
+
+  'time-division-duplex-simple-tdd': {
+    title: 'Time Division Duplex (Simple TDD) & Transmission Rate Formulations',
+    chapterRef: 'Section 11.1 Cordless Systems — Time Division Duplex',
+    stallingsCitation: 'William Stallings, Wireless Communications and Networks, 2nd ed., Chapter 11.1 (pp. 319-321)',
+    summary: 'In the technique of Time Division Duplex (TDD), also known as time-compression multiplexing (TCM), data are transmitted in one direction at a time, with transmission alternating between the two directions. TDD was originally developed for digital subscriber lines (ISDN ping-pong transmission) and has become a cornerstone of modern cordless telephony (DECT) and broadband wireless access (IEEE 802.16).',
+    keyConcepts: [
+      {
+        heading: 'Burst Transmission Time (Tb) and Block Size (B)',
+        body: 'A continuous user bit stream at effective rate R is divided into discrete blocks of size B bits. Each block is compressed and transmitted at a higher actual bit rate A over burst duration Tb = B / A. Because transmission alternates between forward and reverse directions, the effective rate is governed by the full cycle period.',
+        formula: 'R = \\frac{B}{2(T_p + T_b + T_g)} \\quad \\Longleftrightarrow \\quad T_b = \\frac{B}{A}',
+      },
+      {
+        heading: 'Propagation Delay (Tp) over Transmission Distance',
+        body: 'The radio wave travels the physical link distance d at the speed of light c = 3 × 10⁸ m/s, introducing a one-way propagation delay Tp = d / c. In indoor cordless environments (d < 200 m), Tp is under 1 microsecond; in WLL fixed wireless loops (d up to 10 km), Tp reaches tens of microseconds and represents a non-negligible fraction of the frame.',
+        formula: 'T_p = \\frac{d}{c} = \\frac{d}{3 \\times 10^8\\text{ m/s}}',
+      },
+      {
+        heading: 'Channel Turnaround Guard Time (Tg)',
+        body: 'Following each burst, a quiescent guard interval Tg is required for two physical reasons: (1) transceiver circuitry turnaround time (switching between transmit and receive states), and (2) allowing delayed multipath reflections from the preceding burst to decay below the noise floor before the opposite station transmits.',
+        formula: 'T_g \\ge 2 T_p + T_{\\text{switch}}',
+      },
+      {
+        heading: 'Actual Transmission Data Rate Formula (A)',
+        body: 'Combining block size B = A · Tb with the effective subscriber data rate R yields Stallings\' fundamental TDD rate equation. To deliver an effective two-way data rate R, the actual burst rate on the radio medium must exceed 2R by a factor proportional to the propagation and guard overhead.',
+        formula: 'A = 2R \\left(1 + \\frac{T_p + T_g}{T_b}\\right)',
+      },
+    ],
+    protocolStandardCallout: 'In DECT (§11.1), each 10 ms TDMA frame is split into 12 forward and 12 reverse time slots. The actual transmission rate on the radio carrier is 1.152 Mbps to accommodate 24 channels of 32 kbps voice plus framing, guard times, and synchronization overhead.',
+    reviewQuestions: [
+      'Explain the trade-off in selecting block size B: how does larger B affect data rate A versus buffering delay?',
+      'Why is guard time Tg strictly necessary in time division duplex transmission?',
+      'Calculate the required medium data rate A if effective subscriber rate R = 64 kbps, Tb = 2.0 ms, Tp = 0.2 ms, and Tg = 0.4 ms.',
+    ],
+  },
+
+  'tdma-tdd-vs-tdma-fdma': {
+    title: 'TDMA/TDD vs. TDMA/FDMA: Diversity & Dynamic Capacity',
+    chapterRef: 'Section 11.1 Cordless Systems — TDMA/TDD Advantages',
+    stallingsCitation: 'William Stallings, Wireless Communications and Networks, 2nd ed., Chapter 11.1 (pp. 321-322)',
+    summary: 'Cordless systems operate under three severe engineering considerations: (1) modest range with low power, (2) inexpensive, simple handset design, and (3) limited frequency flexibility. Traditional cellular networks deploy dual-carrier TDMA/FDMA with separate forward and reverse frequency bands, requiring bulky RF duplexers. TDMA/TDD alternates transmission on a single carrier, conferring two decisive advantages: spatial antenna diversity using channel reciprocity, and dynamic capacity allocation for asymmetric traffic.',
+    keyConcepts: [
+      {
+        heading: 'RF Duplexer Elimination and Handset Simplification',
+        body: 'In dual-carrier FDD, handsets must transmit and receive simultaneously on different frequencies, necessitating sharp, bulky, and expensive ceramic or SAW duplexer filters to isolate the sensitive receiver from the high-power transmitter. TDD never transmits and receives at the same instant, completely eliminating the duplexer in favor of a cheap, low-loss solid-state PIN diode switch.',
+      },
+      {
+        heading: 'Spatial Antenna Diversity & Channel Reciprocity',
+        body: 'Fast fading changes rapidly over distance and frequency. Dual-antenna spatial diversity on handsets is impractical due to physical size and cost constraints. With TDD, because forward and reverse channels share the identical carrier frequency within the coherence time Tc, channel propagation characteristics are identical (electromagnetic reciprocity). The base station measures incoming handset bursts across two diversity antennas (spaced >= lambda apart), selects the stronger antenna, and immediately uses that same antenna for the subsequent forward transmission.',
+        formula: 'H_{\\text{DL}}(f, t) \\approx H_{\\text{UL}}(f, t) \\quad \\text{when } \\Delta t < T_c \\text{ and } f_{\\text{DL}} = f_{\\text{UL}}',
+      },
+      {
+        heading: 'Dynamic Capacity Allocation for Asymmetric Traffic',
+        body: 'For data applications (web browsing, multimedia streaming), downstream traffic typically outweighs upstream requests by 5:1 to 10:1. In fixed dual-carrier FDMA systems, equal bandwidth on forward and reverse carriers wastes up to half the available spectrum. TDD controllers dynamically shift the slot boundary within each repetitive frame to allocate up to 80-85% of time slots to the downlink as demand fluctuates.',
+        formula: '\\text{Asymmetric Ratio} = \\frac{N_{\\text{Downlink}}}{N_{\\text{Uplink}}} \\approx \\frac{\\text{Offered Load}_{\\text{DL}}}{\\text{Offered Load}_{\\text{UL}}}',
+      },
+      {
+        heading: 'Coherence Bandwidth and Frequency Invariance',
+        body: 'In FDD systems, the separation between forward and reverse bands exceeds the channel coherence bandwidth (Delta f > (Delta f)c), meaning a fade on the uplink gives zero information about fading on the downlink. TDD\'s zero frequency separation guarantees that constructive and destructive multipath states remain invariant across both directions.',
+      },
+    ],
+    protocolStandardCallout: 'Because DECT handsets are inexpensive consumer items, they feature a single omnidirectional antenna. The DECT base station employs two antennas and uses selection diversity: it measures the incoming burst from the handset, chooses the stronger antenna, and uses that exact antenna for the subsequent forward transmission on the identical carrier frequency.',
+    reviewQuestions: [
+      'Why does spatial antenna selection diversity reciprocity fail in dual-carrier FDMA/FDD systems?',
+      'Identify the three design considerations that dictate cordless system architecture according to Stallings.',
+      'How does TDMA/TDD accommodate a 4:1 downstream web browsing asymmetry without wasting spectrum?',
+    ],
+  },
+
+  'dect-protocol-architecture': {
+    title: 'DECT Protocol Architecture & Mobility Management Service Groups',
+    chapterRef: 'Section 11.1 Cordless Systems — DECT Operation',
+    stallingsCitation: 'William Stallings, Wireless Communications and Networks, 2nd ed., Chapter 11.1 (pp. 321-324)',
+    summary: 'Digital Enhanced Cordless Telecommunications (DECT) is the international standard for high-density cordless communications, operating across 10 RF carriers in the 1.88-1.90 GHz band (or 1.91-1.92 GHz for US PWT). Its protocol architecture spans Physical, Medium Access Control (MAC), Data Link Control (DLC), and a structured upper services layer including Call Control and Mobility Management.',
+    keyConcepts: [
+      {
+        heading: 'Physical Layer: 10 RF Carriers and GFSK Modulation',
+        body: 'The physical layer transmits TDMA-TDD frames over 10 radio carriers spaced 1.728 MHz apart. The modulation is Gaussian-filtered FSK (GFSK) with a nominal deviation of 288 kHz. As Stallings notes, this is essentially identical to the GMSK technique used in GSM (Chapter 10). The gross bit rate is 1.152 Mbps across 24 time slots per 10 ms frame (12 forward, 12 reverse), providing 120 full-duplex voice channels.',
+        formula: '\\Delta f = 288\\text{ kHz}, \\quad R_b = 1.152\\text{ Mbps}, \\quad B_t = 0.5',
+      },
+      {
+        heading: 'Medium Access Control (MAC): A-Field and B-Field Multiplexing',
+        body: 'The MAC layer selects physical channels and establishes or releases connections. Within each time slot, the MAC frame multiplexes an A-field (64 bits for broadcast, signaling, and paging) and a B-field (320 bits carrying user voice/data payload). The MAC supports Broadcast, Connection-Oriented (B-field transfer), and Connectionless services.',
+      },
+      {
+        heading: 'Data Link Control (DLC) Layer & LAPDm Procedures',
+        body: 'The DLC layer provides reliable message transfer over the unguided wireless medium using LAPDm procedures (derived from GSM). It features frame sequencing, CRC error detection, and selective Automatic Repeat Request (ARQ) retransmission.',
+      },
+      {
+        heading: 'Mobility Management (7 Formal Service Groups)',
+        body: 'Above the DLC layer, Mobility Management (MM) manages security and access across seven standardized procedure groups: (1) Identity procedures: handset identifies via IPUI; (2) Authentication procedure: challenge-response verification via DSAA; (3) Location procedure: tracking across multi-cell PBX networks; (4) Access rights: validates authorization for local or public PSTN access; (5) Key allocation: distributes encryption keys (DCK); (6) Parameter retrieval: exchanges radio capabilities and codec formats; (7) Ciphering-related procedures: activates real-time DECT Standard Cipher (DSC) encryption.',
+      },
+    ],
+    protocolStandardCallout: 'DECT Mobility Management organizes security and access into seven standardized service groups: Identity, Authentication, Location, Access rights, Key allocation, Parameter retrieval, and Ciphering-related procedures. Once ciphering is established, Call Control activates the 32 kbps ADPCM voice channel.',
+    reviewQuestions: [
+      'What is the function of the A field and B field in DECT MAC frames?',
+      'List and briefly define the seven service groups of DECT Mobility Management.',
+      'Why is DECT GFSK modulation with 288 kHz deviation essentially equivalent to GSM GMSK?',
+    ],
+  },
+
+  'differential-quantization-dpcm-adpcm': {
+    title: 'Differential Quantization, DPCM Feedback & ITU G.726 ADPCM',
+    chapterRef: 'Section 11.1 & Appendix 11A — Linear Predictors',
+    stallingsCitation: 'William Stallings, Wireless Communications and Networks, 2nd ed., Chapter 11.1 & Appendix 11A (pp. 323-328, 356-357)',
+    summary: 'Voice signals exhibit strong sample-to-sample correlation due to the physiological dynamics of the human vocal tract. Standard 64 kbps PCM (§6.4) transmits absolute values with high redundancy. Differential Quantization encodes sample-to-sample differences; DPCM adds a linear predictor loop to eliminate transmitter-receiver drift; and ADPCM (ITU-T G.726) dynamically scales quantization step size y(k) and adapts 8 filter coefficients, halving the voice channel rate to 32 kbps with toll quality.',
+    keyConcepts: [
+      {
+        heading: 'Differential Quantization Redundancy Reduction',
+        body: 'In ordinary 8 kHz PCM telephony (§6.4), adjacent samples separated by 125 microseconds have an amplitude correlation coefficient > 0.85. The difference d(k) = m(k) - m(k-1) has a variance dramatically smaller than m(k). Quantizing this smaller difference requires only 4 bits rather than 8 bits to achieve equivalent perceptual fidelity.',
+        formula: 'd(k) = m(k) - m(k-1) \\quad \\text{with } \\sigma_d^2 \\ll \\sigma_m^2',
+      },
+      {
+        heading: 'DPCM Feedback Loop & Reconstructed Predictor Input',
+        body: 'If an encoder simply transmitted differences of raw analog samples, quantization errors e(k) would accumulate without bound at the receiver, causing catastrophic drift. The DPCM encoder solves this by replicating the receiver\'s feedback loop locally: the difference d(k) = m(k) - m̂q(k) is taken between the input sample and the predicted estimate. The quantized difference dq(k) = d(k) + e(k) is fed back to the predictor, ensuring the encoder and decoder share the exact same state mq(k) = m(k) + q(k).',
+        formula: 'm_q(k) = \\hat{m}_q(k) + d_q(k) = [m(k) - d(k)] + [d(k) + q(k)] = m(k) + q(k)',
+      },
+      {
+        heading: 'Adaptive Quantizer with Dynamic Scale Factor y(k)',
+        body: 'Speech signals vary between quiet pauses and explosive consonants. A fixed quantizer suffers from slope overload during high-energy bursts and granular noise during low-energy vowels. In ADPCM (ITU-T G.726), the quantizer step size is dynamically scaled by factor y(k), updated based on recent sample rates of change converted to logarithmic base-2 representation.',
+        formula: 'd_q(k) = y(k) \\cdot Q^{-1}[I(k)]',
+      },
+      {
+        heading: 'ITU-T G.726 Adaptive Predictor Filter (Equation 11.2)',
+        body: 'For ADPCM, the predictor structure combines a 2nd-order recursive (all-pole) filter and a 6th-order non-recursive (all-zero) filter. Coefficients Ai and Bi are updated using gradient adaptation algorithms based on the rate of change of both signal estimates and difference samples.',
+        formula: '\\hat{s}_e(k) = \\sum_{i=1}^2 A_i(k-i) s_e(k-i) + \\sum_{i=1}^6 B_i(k-i) d_q(k-i)',
+      },
+    ],
+    protocolStandardCallout: 'DECT speech channels utilize G.726 ADPCM at 32 kbps, allowing each 10 ms TDMA frame to carry 320 speech bits per time slot with negligible delay and high audio fidelity.',
+    reviewQuestions: [
+      'Why does an open-loop differential quantizer drift, and how does the DPCM feedback loop prevent this error?',
+      'Explain the function of scale factor y(k) in the G.726 adaptive quantizer.',
+      'Why does the G.726 adaptive predictor employ a combination of a 2nd-order recursive and 6th-order non-recursive filter?',
+    ],
+  },
+
+  'mean-opinion-score-comparison': {
+    title: 'Subjective Speech Quality & Mean Opinion Score (MOS) Evaluation',
+    chapterRef: 'Section 11.1 Cordless Systems — Subjective Measurement of Coder Performance',
+    stallingsCitation: 'William Stallings, Wireless Communications and Networks, 2nd ed., Chapter 11.1 (pp. 328-330)',
+    summary: 'The ultimate objective of voice coding in cordless and wireless systems is to minimize bit rate while preserving human auditory satisfaction. Objective metrics such as SNR or Mean Square Error correlate poorly with human perception because human hearing is insensitive to phase shifts but intolerant of harmonic distortion and transient clicks. The international benchmark for voice quality is the Mean Opinion Score (MOS) obtained through formal subjective listening tests.',
+    keyConcepts: [
+      {
+        heading: 'ITU-T Formal Subjective Listening Methodology (5-Point Scale)',
+        body: 'Under ITU-T Recommendation P.800, a panel of representative listeners evaluates recorded speech samples in a controlled acoustic environment. Each listener rates output on a standardized 5-point scale (Table 11.3): 5 = Excellent (Imperceptible), 4 = Good (Perceptible but not annoying), 3 = Fair (Slightly annoying), 2 = Poor (Annoying), and 1 = Unsatisfactory (Very annoying).',
+      },
+      {
+        heading: 'Toll Quality Benchmark (4.0 to 4.5 MOS)',
+        body: 'As Stallings emphasizes, even uncoded analog studio speech does not achieve a perfect 5.0 rating because human subjects occasionally award a 4 to samples with natural vocal irregularities. In telecommunications engineering, a score between 4.0 and 4.5 represents "Toll Quality"—the wireline benchmark established by copper wire PSTN.',
+        formula: '4.0 \\le \\text{MOS} \\le 4.5 \\quad (\\text{Toll Quality / Wireline Equivalent})',
+      },
+      {
+        heading: 'Comparative Analysis: PCM, ADPCM, CELP, and LPC',
+        body: 'Figure 11.7 summarizes coder quality versus bit rate: Uncoded speech (64k) scores 4.4; PCM G.711 (64k) scores 4.3; ADPCM G.726 (32k) scores 4.1; LD-CELP G.728 (16k) scores 4.0; cellular CELP G.729 (8k) scores 3.6; and tactical LPC (2.4k) drops to 2.4 (intelligible but synthetic). Notice that ADPCM at 32 kbps achieves full toll quality while cutting bandwidth consumption by half.',
+        formula: '\\text{MOS}(\\text{ADPCM 32k}) = 4.1 \\approx \\text{MOS}(\\text{PCM 64k}) = 4.3',
+      },
+      {
+        heading: 'MOS as a Quality of Service (QoS) Standard in IEEE 802.16',
+        body: 'The MOS scale is not merely an academic measure; it is codified as an enforceable Quality of Service (QoS) performance standard in specifications like IEEE 802.16 WiMAX (§11.3). The 802.16 MAC layer defines its Unsolicited Grant Service (UGS) specifically to guarantee the latency, jitter, and throughput required to sustain MOS > 4.0 voice sessions.',
+      },
+    ],
+    protocolStandardCallout: 'Figure 11.7 reveals that ADPCM at 32 kbps achieves a MOS of 4.1, indistinguishable from wired PSTN copper. IEEE 802.16 WiMAX (§11.3) defines its Unsolicited Grant Service (UGS) explicitly to guarantee the delay and throughput required to sustain MOS > 4.0 voice sessions.',
+    reviewQuestions: [
+      'Why do formal subjective listening tests matter more than objective SNR calculations for speech coding?',
+      'Why does even uncoded analog studio speech fail to achieve a unanimous 5.0 rating on the MOS scale?',
+      'Explain how ADPCM at 32 kbps achieves toll-quality speech while CELP coders at 8 kbps fall below MOS 4.0.',
+    ],
+  },
 };
 
 export const TheoryView: React.FC = () => {

@@ -8,6 +8,11 @@ import { OsiModelView } from './fundamentals/OsiModelView';
 import { PcmVoiceView } from './fundamentals/PcmVoiceView';
 import { MultipathLossView } from './fundamentals/MultipathLossView';
 import { CrcArqView } from './fundamentals/CrcArqView';
+import { SimpleTddView } from './cordless/SimpleTddView';
+import { TdmaTddVsFdmaView } from './cordless/TdmaTddVsFdmaView';
+import { DectArchitectureView } from './cordless/DectArchitectureView';
+import { DpcmAdpcmView } from './cordless/DpcmAdpcmView';
+import { MosComparisonView } from './cordless/MosComparisonView';
 import { TheoryView } from './theory/TheoryView';
 import { CATEGORIES } from '../data/topics';
 import { 
@@ -343,6 +348,21 @@ export const NetworkCanvas: React.FC = () => {
               ) : selectedTopic.id === 'crc-arq-error-control' ? (
                 // Phase 3 CRC & ARQ Error Control Network Simulator
                 <CrcArqView />
+              ) : selectedTopic.id === 'time-division-duplex-simple-tdd' ? (
+                // Phase 4 Cordless Systems: Simple TDD
+                <SimpleTddView />
+              ) : selectedTopic.id === 'tdma-tdd-vs-tdma-fdma' ? (
+                // Phase 4 Cordless Systems: TDMA/TDD vs TDMA/FDMA
+                <TdmaTddVsFdmaView />
+              ) : selectedTopic.id === 'dect-protocol-architecture' ? (
+                // Phase 4 Cordless Systems: DECT Architecture & MM Call Setup
+                <DectArchitectureView />
+              ) : selectedTopic.id === 'differential-quantization-dpcm-adpcm' ? (
+                // Phase 4 Cordless Systems: DPCM & ADPCM
+                <DpcmAdpcmView />
+              ) : selectedTopic.id === 'mean-opinion-score-comparison' ? (
+                // Phase 4 Cordless Systems: Mean Opinion Score Comparison
+                <MosComparisonView />
               ) : isMultipleAccessTopic ? (
                 // Phase 2 Simulator Stage (All 5 modes)
                 <MultipleAccessStage />

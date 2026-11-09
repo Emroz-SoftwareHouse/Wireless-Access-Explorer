@@ -489,7 +489,7 @@ export const MultipleAccessStage: React.FC = () => {
               return (
                 <div
                   key={`fdma-lane-label-${dev.id}`}
-                  className="absolute pointer-events-none z-15 text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border shadow-md transition-all whitespace-nowrap bg-white/95 dark:bg-slate-950/90"
+                  className="absolute pointer-events-none z-15 text-[7.5px] xs:text-[8px] sm:text-[9px] font-mono font-bold px-1.5 xs:px-2 py-0.5 rounded-full border shadow-md transition-all whitespace-nowrap bg-white/95 dark:bg-slate-950/90"
                   style={{
                     left: `${labelX}%`,
                     top: `${labelY}%`,
@@ -499,7 +499,8 @@ export const MultipleAccessStage: React.FC = () => {
                     boxShadow: `0 0 8px ${dev.color}30`,
                   }}
                 >
-                  <span>{dev.frequencyStr.split(' = ')[0]} · {dev.frequencyStr.split(' = ')[1]}</span>
+                  <span className="hidden xs:inline">{dev.frequencyStr.split(' = ')[0]} · {dev.frequencyStr.split(' = ')[1]}</span>
+                  <span className="inline xs:hidden">{dev.frequencyStr.split(' = ')[0]}</span>
                 </div>
               );
             })}
@@ -507,14 +508,15 @@ export const MultipleAccessStage: React.FC = () => {
             {/* Central Hub Label for Shared Modes */}
             {mode !== 'fdma' && (
               <div
-                className="absolute pointer-events-none z-15 text-[8px] font-mono px-2 py-0.5 rounded-full border border-cyan-500/40 bg-white/90 dark:bg-slate-950/90 text-cyan-600 dark:text-cyan-400 font-semibold shadow-xs"
+                className="absolute pointer-events-none z-15 text-[7px] xs:text-[8px] font-mono px-1.5 xs:px-2 py-0.5 rounded-full border border-cyan-500/40 bg-white/90 dark:bg-slate-950/90 text-cyan-600 dark:text-cyan-400 font-semibold shadow-xs"
                 style={{
                   left: `${bsPos.x * 100}%`,
                   top: `${(bsPos.y - 0.13) * 100}%`,
                   transform: 'translate(-50%, -50%)',
                 }}
               >
-                <span>2.15 GHz Shared Hub</span>
+                <span className="hidden xs:inline">2.15 GHz Shared Hub</span>
+                <span className="inline xs:hidden">2.15G Hub</span>
               </div>
             )}
 
@@ -523,30 +525,44 @@ export const MultipleAccessStage: React.FC = () => {
               const dPos = nodePositions[pkt.deviceId] || DEFAULT_POSITIONS[pkt.deviceId] || { x: 0.5, y: 0.5 };
               const isFromBS = pkt.direction === 'from_bs';
               const isAck = pkt.type === 'ack';
+              const isGrant = pkt.type === 'grant';
+              const isRequest = pkt.type === 'request';
               const isCollided = pkt.collided;
 
-              // Compute precise current coordinates along the direct spoke segment
-              let posX = dPos.x + (bsPos.x - dPos.x) * pkt.progress;
-              let posY = dPos.y + (bsPos.y - dPos.y) * pkt.progress;
+              // Safe travel clearance so packets travel along visible link corridors without submerging into card boundaries
+              const travelStart = 0.17; // Outside card perimeter
+              const travelEnd = 0.83;   // Outside BS perimeter
+              const span = travelEnd - travelStart;
+
+              let posX: number;
+              let posY: number;
 
               if (isFromBS) {
-                posX = bsPos.x + (dPos.x - bsPos.x) * pkt.progress;
-                posY = bsPos.y + (dPos.y - bsPos.y) * pkt.progress;
+                // Outward: BS perimeter -> Device perimeter
+                const p = (1 - travelEnd) + pkt.progress * span;
+                posX = bsPos.x + (dPos.x - bsPos.x) * p;
+                posY = bsPos.y + (dPos.y - bsPos.y) * p;
+              } else {
+                // Inward: Device perimeter -> BS perimeter
+                const p = travelStart + pkt.progress * span;
+                posX = dPos.x + (bsPos.x - dPos.x) * p;
+                posY = dPos.y + (bsPos.y - dPos.y) * p;
               }
 
               // Collision Detonation rendering (Contention mode)
               if (isCollided) {
                 const colP = pkt.collisionProgress || 0.60;
-                const colX = (dPos.x + (bsPos.x - dPos.x) * colP) * 100;
-                const colY = (dPos.y + (bsPos.y - dPos.y) * colP) * 100;
+                const mappedColP = travelStart + colP * span;
+                const colX = (dPos.x + (bsPos.x - dPos.x) * mappedColP) * 100;
+                const colY = (dPos.y + (bsPos.y - dPos.y) * mappedColP) * 100;
 
                 return (
                   <motion.div
                     key={`col-${pkt.id}`}
-                    initial={{ scale: 0.8 }}
+                    initial={{ scale: 0.85 }}
                     animate={{ scale: [1, 1.25, 0], opacity: [1, 1, 0] }}
                     transition={{ duration: 0.85 }}
-                    className="absolute z-35 px-2 py-1 rounded-lg bg-rose-600 text-white border-2 border-rose-300 flex items-center justify-center font-mono font-bold text-[9px] shadow-[0_0_18px_#f43f5e] whitespace-nowrap pointer-events-none"
+                    className="absolute z-35 px-2.5 py-1 rounded-lg bg-rose-600 text-white border-2 border-rose-100 flex items-center justify-center font-mono font-black text-[10px] sm:text-xs shadow-[0_0_24px_#f43f5e] ring-2 ring-rose-400/80 whitespace-nowrap pointer-events-none"
                     style={{
                       left: `${colX}%`,
                       top: `${colY}%`,
@@ -558,33 +574,40 @@ export const MultipleAccessStage: React.FC = () => {
                 );
               }
 
-              // Normal packet badge riding precisely along the spoke
+              // High-contrast, legible packet pill badge (legible on mobile and desktop)
               return (
                 <div
                   key={pkt.id}
-                  className={`absolute z-30 h-7 px-2.5 rounded-lg flex items-center justify-center font-mono font-bold shadow-lg transition-transform border whitespace-nowrap text-[9px] sm:text-[10px] pointer-events-none ${
+                  className={`absolute z-30 h-6 sm:h-7 px-2 sm:px-2.5 rounded-lg flex items-center justify-center font-mono font-black shadow-lg transition-transform border-2 whitespace-nowrap text-[10px] sm:text-[11px] pointer-events-none select-none ${
                     isAck
-                      ? 'bg-emerald-500 text-slate-950 border-emerald-200 shadow-[0_0_14px_#10b981]'
+                      ? 'bg-emerald-500 text-slate-950 border-emerald-100 dark:border-emerald-200 shadow-[0_0_16px_rgba(16,185,129,0.9)]'
+                      : isGrant
+                      ? 'bg-cyan-400 text-slate-950 border-cyan-100 dark:border-cyan-200 shadow-[0_0_16px_rgba(6,182,212,0.9)]'
+                      : isRequest
+                      ? 'bg-amber-400 text-slate-950 border-amber-100 dark:border-amber-200 shadow-[0_0_16px_rgba(245,158,11,0.9)]'
                       : mode === 'cdma'
-                      ? 'text-white border-white/70 shadow-md'
-                      : 'text-slate-950 border-slate-900/30'
+                      ? 'bg-purple-700 text-white border-purple-200 shadow-[0_0_14px_rgba(168,85,247,0.9)]'
+                      : 'text-slate-950 border-white dark:border-slate-900 shadow-[0_0_14px_rgba(0,0,0,0.5)]'
                   }`}
                   style={{
                     left: `${posX * 100}%`,
                     top: `${posY * 100}%`,
                     transform: 'translate(-50%, -50%)',
-                    backgroundColor: isAck ? undefined : pkt.color,
-                    borderColor: isAck ? undefined : mode === 'cdma' ? '#ffffff' : pkt.color,
-                    boxShadow: `0 0 12px ${isAck ? '#10b981' : pkt.color}`,
+                    backgroundColor: isAck || isGrant || isRequest || mode === 'cdma' ? undefined : pkt.color,
                   }}
                 >
-                  <span>{pkt.label}</span>
+                  <span className="flex items-center gap-1">
+                    {isAck && <span className="text-[11px] leading-none">✓</span>}
+                    {isGrant && <span className="text-[11px] leading-none">⚡</span>}
+                    {isRequest && <span className="text-[10px] leading-none">▲</span>}
+                    <span>{pkt.label}</span>
+                  </span>
                 </div>
               );
             })}
 
             {/* LEFT COLUMN: STA-1 (Top-Left) & STA-2 (Bottom-Left) */}
-            <div className="flex flex-col justify-around h-full py-1 sm:py-2 w-28 sm:w-36 lg:w-40 gap-1.5 sm:gap-2 z-20 shrink-0">
+            <div className="flex flex-col justify-around h-full py-1 sm:py-2 w-[86px] xs:w-24 sm:w-36 lg:w-40 gap-1.5 sm:gap-2 z-20 shrink-0">
               <div ref={(el) => { deviceRefs.current[devices[0].id] = el; }}>
                 <CompactDeviceCard
                   device={devices[0]}
@@ -608,7 +631,7 @@ export const MultipleAccessStage: React.FC = () => {
               {mode === 'contention' && devices.length > 4 ? (
                 <div 
                   ref={(el) => { deviceRefs.current[devices[4].id] = el; }} 
-                  className="z-20 w-full max-w-[190px] shrink-0 pointer-events-auto"
+                  className="z-20 w-full max-w-[130px] sm:max-w-[190px] shrink-0 pointer-events-auto"
                 >
                   <CompactDeviceCard
                     device={devices[4]}
@@ -617,25 +640,30 @@ export const MultipleAccessStage: React.FC = () => {
                   />
                 </div>
               ) : (
-                <div className="h-6" />
+                <div className="h-4 sm:h-6" />
               )}
 
               {/* Central Base Station Hub Node */}
               <div className="flex flex-col items-center my-auto z-20 pointer-events-auto shrink-0">
                 <div
                   ref={bsRef}
-                  className={`relative flex h-16 w-16 sm:h-20 sm:w-20 flex-col items-center justify-center rounded-2xl border transition-all duration-300 ${
+                  className={`relative flex h-12 w-12 sm:h-20 sm:w-20 flex-col items-center justify-center rounded-xl sm:rounded-2xl border transition-all duration-300 ${
                     despreadingActive || deliveredCount > 0
                       ? 'bg-purple-100 dark:bg-purple-950/80 border-purple-500 shadow-[0_0_24px_rgba(168,85,247,0.5)] ring-2 ring-purple-400/50'
                       : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 shadow-lg'
                   }`}
                 >
-                  <BaseStationIcon size={32} color="#9333ea" glow={deliveredCount > 0 || despreadingActive} />
-                  <span className="text-[10px] font-mono font-bold text-slate-900 dark:text-white mt-0.5">BS-01</span>
-                  <span className="text-[8px] font-mono text-purple-700 dark:text-purple-300 font-semibold">Central Hub</span>
+                  <div className="block sm:hidden">
+                    <BaseStationIcon size={22} color="#9333ea" glow={deliveredCount > 0 || despreadingActive} />
+                  </div>
+                  <div className="hidden sm:block">
+                    <BaseStationIcon size={32} color="#9333ea" glow={deliveredCount > 0 || despreadingActive} />
+                  </div>
+                  <span className="text-[9px] sm:text-[10px] font-mono font-bold text-slate-900 dark:text-white mt-0.5">BS-01</span>
+                  <span className="hidden sm:block text-[8px] font-mono text-purple-700 dark:text-purple-300 font-semibold">Central Hub</span>
 
                   {deliveredCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-emerald-500 text-slate-950 text-[9px] font-mono font-bold flex items-center justify-center shadow-md">
+                    <span className="absolute -top-1.5 -right-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-full bg-emerald-500 text-slate-950 text-[8px] sm:text-[9px] font-mono font-bold flex items-center justify-center shadow-md">
                       {deliveredCount}
                     </span>
                   )}
@@ -643,21 +671,21 @@ export const MultipleAccessStage: React.FC = () => {
 
                 {/* CDMA Despreading Notification Banner */}
                 {mode === 'cdma' && (
-                  <div className="mt-1 flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-950/80 border border-purple-300 dark:border-purple-500/40 rounded-lg text-[9px] font-mono text-purple-900 dark:text-purple-200 truncate max-w-full shadow-xs">
-                    <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
+                  <div className="mt-1 flex items-center gap-1 px-1.5 sm:px-2 py-0.5 bg-purple-100 dark:bg-purple-950/80 border border-purple-300 dark:border-purple-500/40 rounded-lg text-[7.5px] xs:text-[8px] sm:text-[9px] font-mono text-purple-900 dark:text-purple-200 truncate max-w-[140px] xs:max-w-[200px] sm:max-w-full shadow-xs">
+                    <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-purple-600 dark:text-purple-400 shrink-0" />
                     <span className="truncate">
                       {despreadingActive
-                        ? 'Orthogonal Walsh Decode (Inner Product)'
-                        : 'CDMA Orthogonal Separation (Zero Cross-Corr)'}
+                        ? 'Walsh Decode'
+                        : 'CDMA Orthogonal'}
                     </span>
                   </div>
                 )}
 
                 {/* DAMA Status Banner */}
                 {mode === 'dama' && (
-                  <div className="mt-1 flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-500/40 rounded-lg text-[9px] font-mono text-amber-900 dark:text-amber-200 truncate max-w-full shadow-xs">
-                    <Zap className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <span className="truncate">DAMA (§11.3.5): BW_REQ → GRANT → Data</span>
+                  <div className="mt-1 flex items-center gap-1 px-1.5 sm:px-2 py-0.5 bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-500/40 rounded-lg text-[7.5px] xs:text-[8px] sm:text-[9px] font-mono text-amber-900 dark:text-amber-200 truncate max-w-[140px] xs:max-w-[200px] sm:max-w-full shadow-xs">
+                    <Zap className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span className="truncate">DAMA: REQ → GRANT → Data</span>
                   </div>
                 )}
               </div>
@@ -666,7 +694,7 @@ export const MultipleAccessStage: React.FC = () => {
               {mode === 'contention' && devices.length > 5 ? (
                 <div 
                   ref={(el) => { deviceRefs.current[devices[5].id] = el; }} 
-                  className="z-20 w-full max-w-[190px] shrink-0 pointer-events-auto"
+                  className="z-20 w-full max-w-[130px] sm:max-w-[190px] shrink-0 pointer-events-auto"
                 >
                   <CompactDeviceCard
                     device={devices[5]}
@@ -675,12 +703,12 @@ export const MultipleAccessStage: React.FC = () => {
                   />
                 </div>
               ) : (
-                <div className="h-6" />
+                <div className="h-4 sm:h-6" />
               )}
             </div>
 
             {/* RIGHT COLUMN: STA-3 (Top-Right) & STA-4 (Bottom-Right) */}
-            <div className="flex flex-col justify-around h-full py-1 sm:py-2 w-28 sm:w-36 lg:w-40 gap-1.5 sm:gap-2 z-20 shrink-0">
+            <div className="flex flex-col justify-around h-full py-1 sm:py-2 w-[86px] xs:w-24 sm:w-36 lg:w-40 gap-1.5 sm:gap-2 z-20 shrink-0">
               <div ref={(el) => { deviceRefs.current[devices[2].id] = el; }}>
                 <CompactDeviceCard
                   device={devices[2]}
@@ -716,7 +744,7 @@ const CompactDeviceCard: React.FC<{
 
   return (
     <div
-      className={`relative p-2.5 rounded-xl border transition-all duration-200 bg-white dark:bg-slate-900/95 shadow-sm flex-1 md:flex-none ${
+      className={`relative p-1.5 xs:p-2 sm:p-2.5 rounded-lg sm:rounded-xl border transition-all duration-200 bg-white dark:bg-slate-900/95 shadow-sm flex-1 md:flex-none ${
         hasRecentAck
           ? 'border-emerald-500 ring-2 ring-emerald-500/40 shadow-emerald-500/20'
           : isBackingOff
@@ -726,35 +754,40 @@ const CompactDeviceCard: React.FC<{
           : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
       }`}
       style={{
-        borderLeftWidth: '4px',
+        borderLeftWidth: '3px',
         borderLeftColor: device.color,
       }}
     >
       {/* Device Header */}
-      <div className="flex items-center justify-between gap-1 mb-1">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <DeviceGlyph type={device.deviceType} color={device.color} size={18} />
-          <span className="text-xs font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
+      <div className="flex items-center justify-between gap-1 mb-0.5 sm:mb-1">
+        <div className="flex items-center gap-1 min-w-0">
+          <div className="block sm:hidden shrink-0">
+            <DeviceGlyph type={device.deviceType} color={device.color} size={14} />
+          </div>
+          <div className="hidden sm:block shrink-0">
+            <DeviceGlyph type={device.deviceType} color={device.color} size={18} />
+          </div>
+          <span className="text-[10px] xs:text-[11px] sm:text-xs font-mono font-bold text-slate-900 dark:text-white truncate">
             {device.shortName}
           </span>
         </div>
 
         {/* Status Indicator */}
         {hasRecentAck ? (
-          <span className="text-[8px] font-mono px-1.5 py-0.2 rounded bg-emerald-500 text-slate-950 font-bold flex items-center gap-0.5 animate-bounce shadow-sm shrink-0">
-            <CheckCircle2 className="h-2.5 w-2.5" />
+          <span className="text-[7px] sm:text-[8px] font-mono px-1 sm:px-1.5 py-0.2 rounded bg-emerald-500 text-slate-950 font-bold flex items-center gap-0.5 animate-bounce shadow-sm shrink-0">
+            <CheckCircle2 className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
             <span>ACK ✓</span>
           </span>
         ) : isBackingOff ? (
-          <span className="text-[8px] font-mono px-1 rounded bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-800 shrink-0">
+          <span className="text-[7px] sm:text-[8px] font-mono px-0.5 sm:px-1 rounded bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-800 shrink-0">
             {device.backoffTimer}s
           </span>
         ) : isQueued ? (
-          <span className="text-[8px] font-mono px-1 rounded bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800 shrink-0">
+          <span className="text-[7px] sm:text-[8px] font-mono px-0.5 sm:px-1 rounded bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-800 shrink-0">
             Q:{device.queueCount}
           </span>
         ) : (
-          <span className="text-[8px] font-mono text-slate-500 dark:text-slate-400 shrink-0">
+          <span className="text-[7px] sm:text-[8px] font-mono text-slate-500 dark:text-slate-400 shrink-0">
             {mode === 'fdma' && device.frequencyStr.split(' ')[0]}
             {mode === 'tdma' && `S${device.tdmaSlotIndex + 1}`}
             {mode === 'cdma' && device.walshCodeStr.split(' ')[0]}
@@ -765,7 +798,7 @@ const CompactDeviceCard: React.FC<{
       </div>
 
       {/* Mode Sub-Descriptor */}
-      <div className="text-[9px] font-mono text-slate-600 dark:text-slate-400 mb-1.5 truncate">
+      <div className="text-[7.5px] xs:text-[8px] sm:text-[9px] font-mono text-slate-600 dark:text-slate-400 mb-1 sm:mb-1.5 truncate">
         {mode === 'fdma' && device.frequencyStr}
         {mode === 'tdma' && device.tdmaSlotName}
         {mode === 'cdma' && device.walshCodeStr}
@@ -777,7 +810,7 @@ const CompactDeviceCard: React.FC<{
       <button
         onClick={onSend}
         disabled={isBackingOff}
-        className={`w-full flex items-center justify-center gap-1 py-1 sm:py-1.5 px-2 rounded-lg text-[11px] sm:text-xs font-mono font-bold transition-all min-h-[30px] sm:min-h-[34px] ${
+        className={`w-full flex items-center justify-center gap-1 py-0.5 sm:py-1.5 px-1 sm:px-2 rounded-md sm:rounded-lg text-[9.5px] sm:text-xs font-mono font-bold transition-all min-h-[24px] sm:min-h-[34px] ${
           isBackingOff
             ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700/40'
             : 'hover:brightness-110 active:scale-95 shadow-sm text-slate-950'
@@ -787,7 +820,7 @@ const CompactDeviceCard: React.FC<{
           boxShadow: isBackingOff ? undefined : `0 0 8px ${device.color}50`,
         }}
       >
-        <Send className="h-3 w-3" />
+        <Send className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
         <span>Send</span>
       </button>
     </div>

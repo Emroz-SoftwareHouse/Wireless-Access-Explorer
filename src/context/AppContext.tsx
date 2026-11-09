@@ -313,6 +313,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const times = [0.00, 0.80, 1.60, 2.40];
       setSimTime(times[subStepIndex] ?? 0);
       window.dispatchEvent(new CustomEvent('TRIGGER_SUBSTEP_ACTION', { detail: { mode: 'contention', step: subStepIndex } }));
+    } else if (topicId === 'time-division-duplex-simple-tdd') {
+      const times = [0.00, 0.50, 1.00, 1.60];
+      setSimTime(times[subStepIndex] ?? 0);
+    } else if (topicId === 'tdma-tdd-vs-tdma-fdma') {
+      const times = [0.50, 2.50, 4.00, 5.20];
+      setSimTime(times[subStepIndex] ?? 0);
+    } else if (topicId === 'dect-protocol-architecture') {
+      const times = [0.00, 1.50, 3.00, 4.50];
+      setSimTime(times[subStepIndex] ?? 0);
+    } else if (topicId === 'differential-quantization-dpcm-adpcm') {
+      const times = [0.00, 3.60, 7.20, 9.00];
+      setSimTime(times[subStepIndex] ?? 0);
+    } else if (topicId === 'mean-opinion-score-comparison') {
+      const times = [0.00, 1.20, 2.40, 3.60];
+      setSimTime(times[subStepIndex] ?? 0);
     }
 
     // Scroll Theory tab to matching concept if element exists
@@ -359,6 +374,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else if (selectedTopicId === 'tdma-mode') {
       const slot = Math.floor((simTime % 2.0) / 0.5);
       setActiveSubStepIndex(Math.min(3, Math.max(0, slot)));
+    } else if (selectedTopicId === 'time-division-duplex-simple-tdd') {
+      const s = Math.min(3, Math.floor((simTime % 4.0) / 1.0));
+      setActiveSubStepIndex(s);
+    } else if (selectedTopicId === 'tdma-tdd-vs-tdma-fdma') {
+      const s = Math.min(3, Math.floor((simTime % 6.0) / 1.5));
+      setActiveSubStepIndex(s);
+    } else if (selectedTopicId === 'dect-protocol-architecture') {
+      const s = Math.min(3, Math.floor((simTime % 8.0) / 2.0));
+      setActiveSubStepIndex(s);
+    } else if (selectedTopicId === 'differential-quantization-dpcm-adpcm') {
+      const s = Math.min(3, Math.floor((simTime % 10.8) / 2.7));
+      setActiveSubStepIndex(s);
+    } else if (selectedTopicId === 'mean-opinion-score-comparison') {
+      const s = Math.min(3, Math.floor((simTime % 4.8) / 1.2));
+      setActiveSubStepIndex(s);
     } else if (selectedTopic.categoryId === 'multiple_access') {
       const s = Math.min(3, Math.floor((simTime % 4.0) / 1.0));
       setActiveSubStepIndex(s);

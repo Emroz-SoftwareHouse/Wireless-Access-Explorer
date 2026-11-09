@@ -381,6 +381,118 @@ export const OverviewCard: React.FC = () => {
               </span>
             </div>
           </div>
+        ) : selectedTopic.categoryId === 'cordless' ? (
+          /* Cordless Systems (§11.1) Technical Overview Card */
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3 space-y-2.5">
+            <div className="flex items-center justify-between text-[11px] font-mono border-b border-slate-200 dark:border-slate-800 pb-1.5">
+              <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1.5 font-bold">
+                <Radio className="h-3.5 w-3.5" />
+                <span>Cordless Telephony (§11.1)</span>
+              </span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 font-mono font-bold">
+                DECT / TDD
+              </span>
+            </div>
+
+            {selectedTopic.id === 'time-division-duplex-simple-tdd' && (
+              <div className="space-y-2 text-xs">
+                <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] font-mono text-slate-500 block">Stallings Rate Equation:</span>
+                  <span className="font-mono font-bold text-cyan-600 dark:text-cyan-400 text-xs block mt-0.5">
+                    A = 2R · (1 + (Tp + Tg) / Tb)
+                  </span>
+                  <p className="text-[10.5px] text-slate-600 dark:text-slate-400 leading-snug mt-1">
+                    Delivering effective two-way data rate R requires transmission bursts at rate A on the radio channel.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono">
+                  <div className="p-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-400 block text-[9px]">DS0 Channel:</span>
+                    <strong className="text-emerald-600 dark:text-emerald-400">64 kbps</strong>
+                  </div>
+                  <div className="p-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-400 block text-[9px]">Guard Time (Tg):</span>
+                    <strong className="text-amber-600 dark:text-amber-400">10 - 50 µs</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {selectedTopic.id === 'tdma-tdd-vs-tdma-fdma' && (
+              <div className="space-y-2 text-xs">
+                <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] font-mono text-slate-500 block">Fast-Fade Advantage:</span>
+                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-xs block mt-0.5">
+                    Channel Reciprocity
+                  </span>
+                  <p className="text-[10.5px] text-slate-600 dark:text-slate-400 leading-snug mt-1">
+                    Base station measures uplink on 2 antennas, selects the best, and transmits downlink on the same frequency. Handsets stay inexpensive with 1 antenna.
+                  </p>
+                </div>
+                <div className="p-2 rounded-lg bg-cyan-50/50 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-800/60 text-[10.5px] text-cyan-900 dark:text-cyan-200 font-mono">
+                  <strong>Dynamic Capacity:</strong> Slotted frame boundary shifts dynamically to support 80%+ downlink web traffic without wasting reverse spectrum.
+                </div>
+              </div>
+            )}
+
+            {selectedTopic.id === 'dect-protocol-architecture' && (
+              <div className="space-y-2 text-xs">
+                <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] font-mono text-slate-500 block">Modulation Benchmark:</span>
+                  <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-xs block mt-0.5">
+                    GFSK (288 kHz deviation)
+                  </span>
+                  <p className="text-[10.5px] text-slate-600 dark:text-slate-400 leading-snug mt-1">
+                    Essentially identical to GSM's GMSK modulation technique (Stallings Chapter 10).
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono">
+                  <div className="p-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-400 block text-[9px]">Data Rate:</span>
+                    <strong className="text-cyan-600 dark:text-cyan-400">1.152 Mbps</strong>
+                  </div>
+                  <div className="p-1.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-400 block text-[9px]">RF Carriers:</span>
+                    <strong className="text-purple-600 dark:text-purple-400">10 Carriers</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {selectedTopic.id === 'differential-quantization-dpcm-adpcm' && (
+              <div className="space-y-2 text-xs">
+                <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] font-mono text-slate-500 block">Standard Compression Codec:</span>
+                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-xs block mt-0.5">
+                    ITU-T G.726 ADPCM (32 kbps)
+                  </span>
+                  <p className="text-[10.5px] text-slate-600 dark:text-slate-400 leading-snug mt-1">
+                    Compresses 64 kbps PCM by 50% down to 32 kbps (4 bits per sample) with toll voice quality.
+                  </p>
+                </div>
+                <div className="p-2 rounded-lg bg-purple-50/50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/60 text-[10.5px] text-purple-900 dark:text-purple-200 font-mono">
+                  <strong>Equation 11.2 Filter:</strong> Combines 2nd-order recursive and 6th-order non-recursive adaptive linear prediction.
+                </div>
+              </div>
+            )}
+
+            {selectedTopic.id === 'mean-opinion-score-comparison' && (
+              <div className="space-y-2 text-xs">
+                <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <span className="text-[10px] font-mono text-slate-500 block">Toll Quality Range:</span>
+                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-xs block mt-0.5">
+                    4.0 – 4.5 MOS (Wireline Equivalent)
+                  </span>
+                  <p className="text-[10.5px] text-slate-600 dark:text-slate-400 leading-snug mt-1">
+                    Formal 5-point subjective listening test. ADPCM at 32 kbps achieves MOS 4.1, indistinguishable from wireline copper.
+                  </p>
+                </div>
+                <div className="p-2 rounded-lg bg-cyan-50/50 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-800/60 text-[10.5px] text-cyan-900 dark:text-cyan-200 font-mono">
+                  <strong>Forward Reference:</strong> MOS is codified as a QoS requirement in IEEE 802.16 WiMAX (§11.3, Phase 6).
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           /* Default Multiple Access / General Simulation Metrics */
           <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3 space-y-2">

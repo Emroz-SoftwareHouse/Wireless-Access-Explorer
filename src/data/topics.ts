@@ -322,6 +322,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Guard Time (Tg)', value: '10 to 50 µs typical turnaround' },
       { label: 'Application', value: 'Cordless phones & ISDN ' },
     ],
+    isImplemented: true,
   },
   {
     id: 'tdma-tdd-vs-tdma-fdma',
@@ -344,6 +345,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Asymmetry Support', value: 'Dynamic slot boundary reallocation' },
       { label: 'Inter-cell Interference', value: 'Requires strict frame time sync' },
     ],
+    isImplemented: true,
   },
   {
     id: 'dect-protocol-architecture',
@@ -361,11 +363,12 @@ export const ALL_TOPICS: Topic[] = [
     ],
     osiLayers: [1, 2, 3],
     specs: [
-      { label: 'Frequency Band', value: '1.88 to 1.90 GHz (Europe) / 1.91-1.92 GHz (US PWT)' },
-      { label: 'Carrier Bandwidth', value: '1.728 MHz (10 RF carriers)' },
-      { label: 'TDMA Frame Format', value: '24 slots per 10 ms (12 downlink, 12 uplink)' },
-      { label: 'Total Channels', value: '120 duplex channels (10 carriers × 12 slots)' },
+      { label: 'Modulation', value: 'GFSK (nominal dev 288 kHz; essentially same as GSM GMSK)' },
+      { label: 'Gross Data Rate', value: '1.152 Mbps' },
+      { label: 'RF Carriers', value: '10 RF carriers (1.88 to 1.90 GHz)' },
+      { label: 'TDMA Framing', value: '24 slots per 10 ms (120 duplex channels total)' },
     ],
+    isImplemented: true,
   },
   {
     id: 'differential-quantization-dpcm-adpcm',
@@ -388,6 +391,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Predictor Order', value: '2nd-order recursive + 6th-order non-recursive' },
       { label: 'Quantization Code', value: '4 bits per sample (1 sign + 3 magnitude)' },
     ],
+    isImplemented: true,
   },
   {
     id: 'mean-opinion-score-comparison',
@@ -410,6 +414,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'ADPCM 32k Score', value: '4.1 MOS (Equivalent to wired copper)' },
       { label: 'Cellular Codecs', value: 'GSM RPE-LPC (3.5) / CELP (3.6)' },
     ],
+    isImplemented: true,
   },
 
   // --- WIRELESS LOCAL LOOP (11.2) ---
