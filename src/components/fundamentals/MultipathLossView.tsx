@@ -35,12 +35,16 @@ export const MultipathLossView: React.FC = () => {
     return Number((92.44 + 20 * Math.log10(freq) + 20 * Math.log10(refDistanceKm)).toFixed(1));
   }, [freq, refDistanceKm]);
 
-  // Relative received power scaling (1.0 at 1 GHz down to 0.22 at 40 GHz)
+  // Relative received power scaling (1.0 at 1 GHz down to 0.18 at 40 GHz, L ∝ f²)
   const signalStrengthPct = useMemo(() => {
-    // 1 GHz -> ~100%, 40 GHz -> ~25%
-    const ratio = Math.pow(1 / freq, 0.45);
-    return Math.max(0.20, Math.min(1.0, ratio));
+    return Math.max(0.18, Math.min(1.0, 1.0 - 0.82 * ((freq - 1.0) / 39.0)));
   }, [freq]);
+
+  // Wavelength in cm: λ = c / f
+  const wavelengthCm = (30 / freq).toFixed(1);
+  const rippleSpacing = Math.max(8, Math.min(36, Math.round(360 / (freq + 8))));
+  const waveStrokeWidth = Math.max(1.2, 5.0 * signalStrengthPct);
+  const waveOpacity = Math.max(0.20, signalStrengthPct);
 
   // Wave cycle timing (repeats every 2.4 seconds at 1x speed)
   const cycleDuration = 2.4;
@@ -292,7 +296,7 @@ export const MultipathLossView: React.FC = () => {
           />
 
           {/* Diffraction Edge Marker at corner (cornerX, cornerY) */}
-          <circle cx={cornerX} cy={cornerY} r={6} fill="#a855f7" opacity={0.6} className="animate-ping" />
+          <circle cx={cornerX} cy={cornerY} r={6} fill="#a855f7" opacity={simPlaying ? 0.6 : 0.2} className={simPlaying ? "animate-ping" : ""} />
           <circle cx={cornerX} cy={cornerY} r={4} fill="#a855f7" stroke="#ffffff" strokeWidth={1} />
           <text
             x={cornerX - 10}
@@ -304,6 +308,22 @@ export const MultipathLossView: React.FC = () => {
           >
             Diffraction Edge (0.6 R₁)
           </text>
+
+          {/* Concentric TX Wavefront Ripples: Ripple density λ = c/f, opacity scales with path loss */}
+          {Array.from({ length: Math.min(10, Math.max(4, Math.round(freq * 0.25 + 3))) }).map((_, rIdx) => {
+            const baseR = 25 + rIdx * rippleSpacing;
+            const currentR = (baseR + (simPlaying ? (simTime * 45 * simSpeed) : 0)) % 280;
+            return (
+              <path
+                key={`tx-ripple-${rIdx}`}
+                d={`M ${txX + Math.cos(-Math.PI / 4.5) * currentR} ${txY + Math.sin(-Math.PI / 4.5) * currentR} A ${currentR} ${currentR} 0 0 1 ${txX + Math.cos(Math.PI / 4.5) * currentR} ${txY + Math.sin(Math.PI / 4.5) * currentR}`}
+                fill="none"
+                stroke="#22d3ee"
+                strokeWidth={Math.max(1, waveStrokeWidth * 0.5)}
+                opacity={Math.max(0.04, waveOpacity * 0.3 * (1 - currentR / 280))}
+              />
+            );
+          })}
 
           {/* Guide Path 1: Direct Line-of-Sight (Cyan) */}
           <line
@@ -451,7 +471,7 @@ export const MultipathLossView: React.FC = () => {
             <polygon points="12,80 36,80 24,32" fill="none" stroke="#475569" strokeWidth={1.5} />
             {/* Antenna Horn / Dish */}
             <circle cx={24} cy={20} r={18} fill="#0f172a" stroke="#06b6d4" strokeWidth={2} />
-            <circle cx={24} cy={20} r={6} fill="#06b6d4" className="animate-pulse" />
+            <circle cx={24} cy={20} r={6} fill="#06b6d4" className={simPlaying ? "animate-pulse" : ""} />
             <text x={24} y={-8} fill="#38bdf8" fontSize={11} fontFamily="monospace" textAnchor="middle" fontWeight="bold">
               TX Tower
             </text>
@@ -466,12 +486,21 @@ export const MultipathLossView: React.FC = () => {
             <rect x={20} y={32} width={8} height={48} fill="#334155" />
             <polygon points="12,80 36,80 24,32" fill="none" stroke="#475569" strokeWidth={1.5} />
             {/* Receiver Dish */}
-            <circle cx={24} cy={20} r={18} fill="#0f172a" stroke="#10b981" strokeWidth={2} />
-            {/* Reception Glow when wavefronts arrive */}
+            <circle cx={24} cy={20} r={18} fill="#0f172a" stroke={signalStrengthPct > 0.4 ? "#10b981" : "#eab308"} strokeWidth={2} />
+            {/* Reception Glow when wavefronts arrive (scales with received signal strength) */}
             {(isLosArrived || isRefArrived || isDiffArrived) && (
-              <circle cx={24} cy={20} r={28} fill="none" stroke="#34d399" strokeWidth={2} className="animate-ping" opacity={0.6} />
+              <circle
+                cx={24}
+                cy={20}
+                r={28}
+                fill="none"
+                stroke={signalStrengthPct > 0.4 ? "#34d399" : "#fbbf24"}
+                strokeWidth={Math.max(1, 3 * signalStrengthPct)}
+                className={simPlaying ? "animate-ping" : ""}
+                opacity={waveOpacity * 0.8}
+              />
             )}
-            <circle cx={24} cy={20} r={6} fill="#10b981" />
+            <circle cx={24} cy={20} r={6} fill={signalStrengthPct > 0.4 ? "#10b981" : "#eab308"} opacity={waveOpacity} />
             <text x={24} y={-8} fill="#34d399" fontSize={11} fontFamily="monospace" textAnchor="middle" fontWeight="bold">
               RX Station
             </text>

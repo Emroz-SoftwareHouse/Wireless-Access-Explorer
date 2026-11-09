@@ -29,6 +29,7 @@ export const TopicSidebar: React.FC = () => {
     setMobileSidebarOpen,
     sidebarCollapsed,
     toggleSidebarCollapse,
+    selectSubStep,
   } = useApp();
 
   // Filter topics by category and search query
@@ -80,15 +81,15 @@ export const TopicSidebar: React.FC = () => {
     }
   };
 
-  const handleSelectSubStep = (idx: number) => {
-    setActiveSubStepIndex(idx);
+  const handleSelectSubStep = (topicId: string, idx: number) => {
+    selectSubStep(topicId, idx);
     if (window.innerWidth < 1024) {
       setMobileSidebarOpen(false);
     }
   };
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-white dark:bg-[#080c17] text-slate-800 dark:text-slate-100 select-none">
+    <div className="flex flex-col h-full bg-white dark:bg-[#080c17] text-slate-800 dark:text-slate-100 select-none min-w-0 overflow-hidden">
       {/* Drawer Header on Mobile */}
       <div className="lg:hidden p-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-100 dark:bg-slate-900/60">
         <div className="flex items-center gap-2">
@@ -107,7 +108,7 @@ export const TopicSidebar: React.FC = () => {
       </div>
 
       {/* 1. Search Box with Desktop Collapse Toggle */}
-      <div className="p-2.5 px-3 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/30 flex items-center justify-between gap-2">
+      <div className="p-2.5 px-3 border-b border-slate-200 dark:border-slate-800/80 bg-white dark:bg-[#080c17] flex items-center justify-between gap-2 relative z-20">
         <div className="relative flex-1 flex items-center">
           <Search className="absolute left-2.5 h-3.5 w-3.5 text-slate-400 dark:text-slate-500 pointer-events-none" />
           <input
@@ -115,7 +116,7 @@ export const TopicSidebar: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search 30 topics..."
-            className="w-full rounded-lg bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 pl-8 pr-7 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors shadow-xs"
+            className="w-full rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 pl-8 pr-7 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-colors shadow-xs"
           />
           {searchQuery && (
             <button
@@ -177,7 +178,7 @@ export const TopicSidebar: React.FC = () => {
       </div>
 
       {/* 3. Grouped Topics Scrollable List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 space-y-4">
         {groupedCategories.length === 0 ? (
           <div className="text-center py-10 px-4">
             <BookOpen className="h-8 w-8 text-slate-600 mx-auto mb-2 opacity-50" />
@@ -224,7 +225,7 @@ export const TopicSidebar: React.FC = () => {
                     isCompleted={completedTopicIds.has(topic.id)}
                     onSelect={handleSelectTopic}
                     activeSubStepIndex={activeSubStepIndex}
-                    onSelectSubStep={handleSelectSubStep}
+                    onSelectSubStep={(idx) => handleSelectSubStep(topic.id, idx)}
                   />
                 ))}
               </div>
@@ -296,16 +297,16 @@ export const TopicSidebar: React.FC = () => {
 
   return (
     <>
-      {/* Desktop Persistent Sidebar (>= lg) */}
-      <aside className={`hidden lg:flex transition-all duration-200 ${
-        sidebarCollapsed ? 'w-14' : 'w-80 xl:w-96'
-      } border-r border-slate-200 dark:border-slate-800 h-full shrink-0`}>
+      {/* Desktop & Tablet In-Flow Sidebar (>= md) */}
+      <aside className={`hidden md:flex flex-col transition-all duration-200 ${
+        sidebarCollapsed ? 'w-14' : 'w-60 lg:w-64 xl:w-72 max-w-[280px]'
+      } border-r border-slate-200 dark:border-slate-800 h-full shrink-0 overflow-hidden bg-white dark:bg-[#080c17]`}>
         {sidebarCollapsed ? collapsedRailContent : sidebarContent}
       </aside>
 
-      {/* Mobile / Tablet Drawer (< lg) with animated slide-in and backdrop */}
+      {/* Mobile Full-Screen Slide-Out Drawer (< md) */}
       {mobileSidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
+        <div className="md:hidden fixed inset-0 z-50 flex">
           {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
@@ -313,7 +314,7 @@ export const TopicSidebar: React.FC = () => {
           />
 
           {/* Slide-out Drawer */}
-          <div className="relative w-80 max-w-[85vw] h-full z-10 shadow-2xl border-r border-slate-800 animate-slide-in">
+          <div className="relative w-80 max-w-[85vw] h-full z-10 shadow-2xl border-r border-slate-800 bg-white dark:bg-[#080c17] animate-slide-in">
             {sidebarContent}
           </div>
         </div>

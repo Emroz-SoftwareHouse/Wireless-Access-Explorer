@@ -219,8 +219,8 @@ export const MultipleAccessProvider: React.FC<{ children: React.ReactNode }> = (
   const deviceStatsRef = useRef(deviceStats);
   deviceStatsRef.current = deviceStats;
 
-  // Auto-traffic toggle (default true for Contention mode, false for others)
-  const [autoTraffic, setAutoTraffic] = useState<boolean>(() => mode === 'contention');
+  // Auto-traffic toggle (default true so clicking Play immediately animates traffic)
+  const [autoTraffic, setAutoTraffic] = useState<boolean>(true);
 
   // Packets in flight
   const [packets, setPackets] = useState<PacketInFlight[]>([]);
@@ -264,7 +264,7 @@ export const MultipleAccessProvider: React.FC<{ children: React.ReactNode }> = (
 
   // Sync autoTraffic default on mode change
   useEffect(() => {
-    setAutoTraffic(mode === 'contention');
+    setAutoTraffic(true);
     setPackets([]);
     setCollisionsCount(0);
     setDeliveredCount(0);

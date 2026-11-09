@@ -7,9 +7,10 @@ import {
   Moon, 
   Globe, 
   Layers, 
-  CheckCircle2,
-  ChevronDown,
-  Menu
+  CheckCircle2, 
+  ChevronDown, 
+  Menu,
+  BookOpen
 } from 'lucide-react';
 
 const OSI_LAYER_NAMES: { [key: number]: string } = {
@@ -32,6 +33,7 @@ export const TopBar: React.FC = () => {
     theme,
     toggleTheme,
     toggleMobileSidebar,
+    toggleMobileOverview,
   } = useApp();
 
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
@@ -42,12 +44,12 @@ export const TopBar: React.FC = () => {
       <header className="h-14 sm:h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#090d1a] px-3 sm:px-4 lg:px-6 flex items-center justify-between gap-2 sm:gap-4 transition-colors">
         {/* 1. Left Zone: Hamburger (Mobile) + Brand Logo & Title */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Mobile Drawer Hamburger Button */}
+          {/* Mobile Drawer Hamburger Button (< md) */}
           <button
             onClick={toggleMobileSidebar}
             aria-label="Open topics drawer"
-            title="Browse all 30 topics"
-            className="lg:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="Browse all 30 topics syllabus"
+            className="md:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -72,7 +74,7 @@ export const TopBar: React.FC = () => {
         </div>
 
         {/* 2. Center Zone: Desktop "NOW LEARNING" Panel */}
-        <div className="hidden lg:flex items-center gap-4 bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 px-4 py-2 rounded-xl shadow-inner max-w-xl xl:max-w-2xl truncate">
+        <div className="hidden xl:flex items-center gap-4 bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 px-4 py-2 rounded-xl shadow-inner max-w-xl xl:max-w-2xl truncate">
           <div className="flex flex-col min-w-0 pr-3 border-r border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -149,6 +151,17 @@ export const TopBar: React.FC = () => {
             </div>
           </div>
 
+          {/* Mobile Overview & Specs Drawer Button (< md) */}
+          <button
+            onClick={toggleMobileOverview}
+            aria-label="Open topic overview & specs drawer"
+            title="Open topic overview & specs drawer"
+            className="md:hidden flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 hover:border-cyan-500/40 transition-colors shadow-sm text-xs font-semibold"
+          >
+            <BookOpen className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+            <span className="hidden sm:inline">Overview</span>
+          </button>
+
           <div className="h-5 sm:h-6 w-px bg-slate-200 dark:bg-slate-800" />
 
           {/* Theme Toggle Button */}
@@ -200,8 +213,8 @@ export const TopBar: React.FC = () => {
         </div>
       </header>
 
-      {/* 4. Compact Mobile / Tablet Sub-Banner for Active Topic & OSI Dots (< lg) */}
-      <div className="lg:hidden bg-slate-100/90 dark:bg-slate-950/90 border-b border-slate-200 dark:border-slate-800 px-3 py-1.5 flex items-center justify-between gap-2 overflow-x-auto scrollbar-none text-xs font-mono">
+      {/* 4. Compact Mobile / Tablet Sub-Banner for Active Topic & OSI Dots (< xl) */}
+      <div className="xl:hidden bg-slate-100/90 dark:bg-slate-950/90 border-b border-slate-200 dark:border-slate-800 px-3 py-1.5 flex items-center justify-between gap-2 overflow-x-auto scrollbar-none text-xs font-mono">
         <div className="flex items-center gap-2 min-w-0">
           <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded border ${categoryInfo.badgeClass} shrink-0`}>
             {categoryInfo.tabLabel || categoryInfo.label}

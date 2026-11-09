@@ -326,16 +326,31 @@ export const PcmVoiceView: React.FC = () => {
                     >
                       t{idx}
                     </text>
+                    <text
+                      x={x}
+                      y={zeroY + 27}
+                      fill={isCurrent ? '#c084fc' : '#475569'}
+                      fontSize={7.5}
+                      fontFamily="monospace"
+                      textAnchor="middle"
+                    >
+                      Q{sample.quantizedLevel}
+                    </text>
                   </>
                 )}
               </g>
             );
           })}
 
-          {/* Active Animated Sampling Marker Cursor */}
+          {/* Active Animated Sampling Marker Cursor & On-Chart Conversion Callout */}
           {(() => {
             const currentX = 64 + (currentSampleIdx / (SAMPLE_COUNT - 1)) * (svgWidth - 128);
             const analogY = zeroY - activeSample.analogVal * ampScale;
+            const quantizedNormalized = (activeSample.quantizedLevel / 255) * 2 - 1;
+            const snappedY = zeroY - quantizedNormalized * ampScale;
+            const calloutAbove = snappedY >= zeroY;
+            const calloutY = calloutAbove ? Math.max(26, snappedY - 32) : Math.min(svgHeight - 26, snappedY + 32);
+
             return (
               <g>
                 <line
@@ -346,7 +361,7 @@ export const PcmVoiceView: React.FC = () => {
                   stroke="#38bdf8"
                   strokeWidth={1.5}
                   strokeDasharray="4 2"
-                  className="opacity-70 animate-pulse"
+                  className={simPlaying ? "opacity-70 animate-pulse" : "opacity-40"}
                 />
                 <circle
                   cx={currentX}
@@ -355,8 +370,48 @@ export const PcmVoiceView: React.FC = () => {
                   fill="none"
                   stroke="#38bdf8"
                   strokeWidth={2}
-                  className="animate-ping"
+                  className={simPlaying ? "animate-ping" : ""}
                 />
+
+                {/* ON-CHART VISUAL CONVERSION CALLOUT: Level X -> Binary */}
+                {hasTakenSample && (
+                  <g transform={`translate(${Math.max(80, Math.min(svgWidth - 80, currentX))}, ${calloutY})`}>
+                    {/* Leader line from sample dot to callout badge */}
+                    <line
+                      x1={0}
+                      y1={calloutAbove ? 12 : -12}
+                      x2={0}
+                      y2={snappedY - calloutY}
+                      stroke="#c084fc"
+                      strokeWidth={1.5}
+                      strokeDasharray="2 2"
+                    />
+                    {/* Callout Badge Box */}
+                    <rect
+                      x={-72}
+                      y={-12}
+                      width={144}
+                      height={24}
+                      rx={6}
+                      fill="#0b0f19"
+                      stroke="#c084fc"
+                      strokeWidth={1.5}
+                      className="filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.85)]"
+                    />
+                    <text
+                      x={0}
+                      y={4}
+                      fontSize={10}
+                      fontFamily="monospace"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                    >
+                      <tspan fill="#e2e8f0">Level {activeSample.quantizedLevel}</tspan>
+                      <tspan fill="#38bdf8"> → </tspan>
+                      <tspan fill="#4ade80">{activeSample.binaryString}</tspan>
+                    </text>
+                  </g>
+                )}
               </g>
             );
           })()}

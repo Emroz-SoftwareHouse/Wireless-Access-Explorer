@@ -14,6 +14,7 @@ import {
   Zap, 
   Sparkles 
 } from 'lucide-react';
+import { MathFormula } from '../common/MathFormula';
 
 interface TopicTheory {
   title: string;
@@ -305,7 +306,7 @@ const THEORY_DATABASE: Record<string, TopicTheory> = {
 };
 
 export const TheoryView: React.FC = () => {
-  const { selectedTopic } = useApp();
+  const { selectedTopic, activeSubStepIndex } = useApp();
 
   const theory = THEORY_DATABASE[selectedTopic.id];
 
@@ -364,29 +365,46 @@ export const TheoryView: React.FC = () => {
           Key Principles & Analytical Formulations
         </h3>
 
-        {theory.keyConcepts.map((concept, idx) => (
-          <div 
-            key={idx}
-            className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs"
-          >
-            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
-              <span className="flex h-5 w-5 rounded-md bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 items-center justify-center font-mono text-xs font-bold">
-                {idx + 1}
-              </span>
-              <span>{concept.heading}</span>
-            </h4>
+        {theory.keyConcepts.map((concept, idx) => {
+          const isCurrentStep = activeSubStepIndex === idx;
+          return (
+            <div 
+              key={idx}
+              id={`theory-concept-${idx}`}
+              className={`rounded-2xl p-4 transition-all duration-300 ${
+                isCurrentStep
+                  ? 'bg-cyan-50/80 dark:bg-slate-900/95 border-2 border-cyan-500 shadow-lg shadow-cyan-950/20 ring-1 ring-cyan-400'
+                  : 'bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 shadow-xs'
+              }`}
+            >
+              <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className={`flex h-5 w-5 rounded-md items-center justify-center font-mono text-xs font-bold ${
+                    isCurrentStep ? 'bg-cyan-500 text-slate-950' : 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300'
+                  }`}>
+                    {idx + 1}
+                  </span>
+                  <span>{concept.heading}</span>
+                </div>
+                {isCurrentStep && (
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-bold border border-cyan-500/30">
+                    Active Syllabus Step #{idx + 1}
+                  </span>
+                )}
+              </h4>
 
-            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line mb-3">
-              {concept.body}
-            </p>
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line mb-3">
+                {concept.body}
+              </p>
 
-            {concept.formula && (
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#070b14] border border-slate-200 dark:border-slate-800/80 font-mono text-xs sm:text-sm text-cyan-700 dark:text-cyan-300 overflow-x-auto text-center font-semibold shadow-inner">
-                {concept.formula}
-              </div>
-            )}
-          </div>
-        ))}
+              {concept.formula && (
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#070b14] border border-slate-200 dark:border-slate-800/80 overflow-x-auto text-center shadow-inner">
+                  <MathFormula tex={concept.formula} />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Chapter 11 Protocol Standard Callout */}

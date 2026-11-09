@@ -12,7 +12,9 @@ import {
   Radio, 
   Sparkles,
   ArrowRight,
-  Flame
+  Flame,
+  Info,
+  X
 } from 'lucide-react';
 
 export const CrcArqView: React.FC = () => {
@@ -86,6 +88,109 @@ export const CrcArqView: React.FC = () => {
   const isErrAckMoving = isErrorSimulated && cycleTime >= 5.10 && cycleTime < 6.30;
   const errAckProgress = isErrorSimulated ? Math.min(1, Math.max(0, (cycleTime - 5.10) / 1.20)) : 0;
   const isErrDelivered = isErrorSimulated && cycleTime >= 6.30;
+
+  // Step information modal / tooltip state for the 4 interactive cards
+  const [selectedInfoStep, setSelectedInfoStep] = useState<number | null>(null);
+
+  const STEP_INFO = [
+    {
+      step: 1,
+      title: 'Step 1: Modulo-2 Encoding (Sender)',
+      short: 'Append FCS = R(X)',
+      desc: 'The transmitting station (Laptop STA-1) divides its raw payload data by the standard CRC-16 generator polynomial P(X) using modulo-2 arithmetic (XOR logic). The resulting 16-bit remainder is the Frame Check Sequence (FCS), appended to the end of the frame before wireless transmission.',
+      why: 'Why it occurs: Wireless channels are prone to atmospheric noise, multipath fading, and interference that can flip bits. Appending the mathematical FCS allows the receiver to detect bit errors with >99.998% certainty.'
+    },
+    {
+      step: 2,
+      title: 'Step 2: CRC Check at Base Station (Receiver)',
+      short: 'Modulo-2 Division & Syndrome Check',
+      desc: 'Upon receiving the packet, Base Station BS-01 divides the entire incoming block (Payload + FCS) by the identical generator polynomial P(X). If the remainder is exactly zero, the frame is intact. If remainder ≠ 0, at least one bit was corrupted in transit.',
+      why: 'Why it occurs: The receiver must verify physical frame integrity before passing data to upper layers. A non-zero remainder alerts the MAC layer to immediately drop the invalid frame.'
+    },
+    {
+      step: 3,
+      title: 'Step 3: ARQ Negative ACK (NACK Burst)',
+      short: 'Error Feedback Transmission',
+      desc: 'When a CRC check fails, the Base Station immediately discards the damaged bits and broadcasts a high-priority Negative Acknowledgment (NACK) control burst over the feedback channel back to the transmitting station.',
+      why: 'Why it occurs: In Stop-and-Wait ARQ, the sender needs unambiguous notification that the frame was destroyed so it does not wait indefinitely for a timeout before resending.'
+    },
+    {
+      step: 4,
+      title: 'Step 4: Buffer Retransmission & Positive ACK',
+      short: 'Recovery & RTT Cycle Complete',
+      desc: 'Upon receiving the NACK, Laptop STA-1 retrieves the unacknowledged frame from its retransmission buffer and immediately resends it. Once the Base Station verifies the retransmitted frame with remainder = 0, it sends a positive ACK, completing the ARQ recovery cycle.',
+      why: 'Why it occurs: Retransmission guarantees 100% reliable data delivery across noisy wireless links, ensuring lost voice or data packets are promptly recovered with minimal latency.'
+    }
+  ];
+
+  // Dynamic plain-English state explainer banner based on current simulation playhead
+  const currentStatusBanner = useMemo(() => {
+    if (!isErrorSimulated) {
+      if (cycleTime < 1.80) {
+        return {
+          badge: 'TRANSMITTING',
+          badgeColor: 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-500/40',
+          text: 'Transmitting Frame #1: Laptop is transmitting 256-bit payload with appended CRC-16 Frame Check Sequence (FCS = 0x4A3F) across clean wireless channel.'
+        };
+      } else if (cycleTime < 3.00) {
+        return {
+          badge: 'CRC VALID ✓',
+          badgeColor: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
+          text: 'Base Station CRC Verification: Modulo-2 division remainder = 0. Frame is completely intact! BS-01 is returning positive ACK burst.'
+        };
+      } else {
+        return {
+          badge: 'ACK DELIVERED',
+          badgeColor: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
+          text: 'Stop-and-Wait ARQ Success: Laptop confirmed ACK receipt. One round-trip time (RTT) elapsed, transmission buffer cleared.'
+        };
+      }
+    } else {
+      if (cycleTime < 0.85) {
+        return {
+          badge: 'TRANSMITTING',
+          badgeColor: 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border-cyan-500/40',
+          text: 'Transmitting Frame #1: Laptop is sending payload across the air with attached FCS = 0x4A3F.'
+        };
+      } else if (cycleTime < 1.80) {
+        return {
+          badge: 'BIT ERROR GLITCH!',
+          badgeColor: 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/40',
+          text: 'Channel RF Interference Spark: Wireless fading flipped bit #142 in mid-flight! Frame payload is now corrupt.'
+        };
+      } else if (cycleTime < 2.00) {
+        return {
+          badge: 'CRC MISMATCH!',
+          badgeColor: 'bg-rose-600/20 text-rose-700 dark:text-rose-300 border-rose-600/50',
+          text: 'CRC Check Failed at Base Station: Modulo-2 remainder ≠ 0 (Syndrome error). Frame is discarded.'
+        };
+      } else if (cycleTime < 3.50) {
+        return {
+          badge: 'ARQ NACK DISPATCHED',
+          badgeColor: 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/40',
+          text: 'Fast ARQ NACK in Flight: Base station alerts transmitter that frame was corrupted and requests immediate retransmission.'
+        };
+      } else if (cycleTime < 5.10) {
+        return {
+          badge: 'RETRANSMITTING',
+          badgeColor: 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40',
+          text: 'Buffer Retransmit: Laptop processes NACK, retrieves original packet from memory, and retransmits across the link.'
+        };
+      } else if (cycleTime < 6.30) {
+        return {
+          badge: 'RETRANSMIT CRC PASS',
+          badgeColor: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
+          text: 'Recovery Verified: Retransmitted frame arrives without errors. Modulo-2 remainder = 0. BS-01 dispatches ACK.'
+        };
+      } else {
+        return {
+          badge: 'ARQ RECOVERED ✓',
+          badgeColor: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40',
+          text: 'ARQ Cycle Resolved: Laptop received ACK for retransmitted packet. Zero data loss despite channel noise.'
+        };
+      }
+    }
+  }, [cycleTime, isErrorSimulated]);
 
   // Track dispatched protocol events to SimulationPanel
   const lastEventStageRef = useRef<string>('');
@@ -314,6 +419,16 @@ export const CrcArqView: React.FC = () => {
         <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
           <div className="w-80 h-80 rounded-full border border-cyan-500/40" />
           <div className="w-[480px] h-[480px] rounded-full border border-cyan-500/20 absolute" />
+        </div>
+
+        {/* Dynamic Live Protocol State Explainer Banner */}
+        <div className="relative z-20 w-full max-w-xl mx-auto mb-3 px-3.5 py-2 rounded-xl bg-slate-900/95 border border-slate-800 shadow-lg flex items-center gap-3 backdrop-blur-sm">
+          <span className={`px-2.5 py-0.5 rounded-md font-mono text-[9px] font-bold uppercase tracking-wider shrink-0 border ${currentStatusBanner.badgeColor}`}>
+            {currentStatusBanner.badge}
+          </span>
+          <span className="text-xs text-slate-200 font-sans leading-tight">
+            {currentStatusBanner.text}
+          </span>
         </div>
 
         {/* Central Link Row */}
@@ -594,13 +709,13 @@ export const CrcArqView: React.FC = () => {
           </span>
         </div>
 
-        {/* 4 Multi-step Protocol Buttons (Clickable to scrub simulation timeline) */}
+        {/* 4 Multi-step Protocol Buttons (Clickable to scrub simulation timeline + Info icon for plain-English explanation) */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
           {/* Step 1 */}
           <button
             onClick={() => setSimTime(0.20)}
             title="Click to jump to Step 1: Modulo-2 Encoding & Frame Transmission"
-            className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+            className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer relative ${
               (isCleanDataMoving || isErrP1Moving) && cycleTime < 1.80
                 ? 'bg-cyan-950/60 border-cyan-400 text-cyan-300 ring-2 ring-cyan-400/50 shadow-md scale-[1.02]'
                 : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:bg-slate-900/60'
@@ -608,7 +723,21 @@ export const CrcArqView: React.FC = () => {
           >
             <div className="flex items-center justify-between mb-1">
               <span className="text-[9px] text-slate-500 uppercase font-bold">Step 1: Encode</span>
-              <span className="text-[8px] text-cyan-400/80 font-mono">0.2s ↷</span>
+              <div className="flex items-center gap-1">
+                <span className="text-[8px] text-cyan-400/80 font-mono">0.2s ↷</span>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedInfoStep(selectedInfoStep === 1 ? null : 1);
+                  }}
+                  title="Explain Step 1: Modulo-2 Encoding"
+                  className="p-0.5 rounded text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition-colors"
+                >
+                  <Info className="h-3 w-3" />
+                </span>
+              </div>
             </div>
             <span className="font-bold text-slate-100 block truncate">Append FCS = R(X)</span>
             <span className="text-[10px] text-slate-400 mt-0.5 block">Transmit frame to BS</span>
@@ -618,7 +747,7 @@ export const CrcArqView: React.FC = () => {
           <button
             onClick={() => setSimTime(1.85)}
             title="Click to jump to Step 2: CRC Modulo-2 Check at Base Station"
-            className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+            className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer relative ${
               (cycleTime >= 1.80 && cycleTime < 2.00) || (cycleTime >= 1.80 && !isErrorSimulated && cycleTime < 2.50)
                 ? isCrcFailedAtBs
                   ? 'bg-rose-950/60 border-rose-400 text-rose-300 ring-2 ring-rose-400/50 shadow-md scale-[1.02]'
@@ -628,7 +757,21 @@ export const CrcArqView: React.FC = () => {
           >
             <div className="flex items-center justify-between mb-1">
               <span className="text-[9px] text-slate-500 uppercase font-bold">Step 2: CRC Check</span>
-              <span className="text-[8px] text-purple-400/80 font-mono">1.85s ↷</span>
+              <div className="flex items-center gap-1">
+                <span className="text-[8px] text-purple-400/80 font-mono">1.85s ↷</span>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedInfoStep(selectedInfoStep === 2 ? null : 2);
+                  }}
+                  title="Explain Step 2: CRC Modulo-2 Division"
+                  className="p-0.5 rounded text-slate-400 hover:text-purple-400 hover:bg-slate-800 transition-colors"
+                >
+                  <Info className="h-3 w-3" />
+                </span>
+              </div>
             </div>
             <span className="font-bold text-slate-100 block truncate">
               {isCrcFailedAtBs ? 'Remainder ≠ 0 (FAIL)' : (isCleanCrcPassed || isRetransmitCrcPassed) ? 'Remainder = 0 (PASS)' : 'T(X) / P(X) Div'}
@@ -645,7 +788,7 @@ export const CrcArqView: React.FC = () => {
               setSimTime(2.40);
             }}
             title="Click to jump to Step 3: ARQ Negative ACK (NACK) Return"
-            className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+            className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer relative ${
               isErrorSimulated && cycleTime >= 2.00 && cycleTime < 3.50
                 ? 'bg-rose-950/60 border-rose-400 text-rose-300 ring-2 ring-rose-400/50 shadow-md scale-[1.02]'
                 : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:bg-slate-900/60'
@@ -653,7 +796,21 @@ export const CrcArqView: React.FC = () => {
           >
             <div className="flex items-center justify-between mb-1">
               <span className="text-[9px] text-slate-500 uppercase font-bold">Step 3: ARQ NACK</span>
-              <span className="text-[8px] text-rose-400/80 font-mono">2.40s ↷</span>
+              <div className="flex items-center gap-1">
+                <span className="text-[8px] text-rose-400/80 font-mono">2.40s ↷</span>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedInfoStep(selectedInfoStep === 3 ? null : 3);
+                  }}
+                  title="Explain Step 3: ARQ NACK Feedback"
+                  className="p-0.5 rounded text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+                >
+                  <Info className="h-3 w-3" />
+                </span>
+              </div>
             </div>
             <span className="font-bold text-slate-100 block truncate">
               {isNackMoving || isNackAtLaptop ? 'NACK Emitted ⚠️' : 'NACK on Failure'}
@@ -665,7 +822,7 @@ export const CrcArqView: React.FC = () => {
           <button
             onClick={() => setSimTime(isErrorSimulated ? 4.20 : 2.40)}
             title="Click to jump to Step 4: Retransmit & ACK"
-            className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer ${
+            className={`p-2.5 rounded-lg border text-left transition-all cursor-pointer relative ${
               (isErrorSimulated && cycleTime >= 3.50) || (!isErrorSimulated && cycleTime >= 2.50)
                 ? 'bg-amber-950/60 border-amber-400 text-amber-300 ring-2 ring-amber-400/50 shadow-md scale-[1.02]'
                 : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:bg-slate-900/60'
@@ -673,7 +830,21 @@ export const CrcArqView: React.FC = () => {
           >
             <div className="flex items-center justify-between mb-1">
               <span className="text-[9px] text-slate-500 uppercase font-bold">Step 4: Retransmit & ACK</span>
-              <span className="text-[8px] text-amber-400/80 font-mono">{isErrorSimulated ? '4.2s ↷' : '2.4s ↷'}</span>
+              <div className="flex items-center gap-1">
+                <span className="text-[8px] text-amber-400/80 font-mono">{isErrorSimulated ? '4.2s ↷' : '2.4s ↷'}</span>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedInfoStep(selectedInfoStep === 4 ? null : 4);
+                  }}
+                  title="Explain Step 4: Retransmission and ACK"
+                  className="p-0.5 rounded text-slate-400 hover:text-amber-400 hover:bg-slate-800 transition-colors"
+                >
+                  <Info className="h-3 w-3" />
+                </span>
+              </div>
             </div>
             <span className="font-bold text-slate-100 block truncate">
               {isCleanDelivered || isErrDelivered ? 'ACK Confirmed ✓' : isRetransmitMoving ? 'Retrying Payload' : 'Clean ACK on OK'}
@@ -681,6 +852,31 @@ export const CrcArqView: React.FC = () => {
             <span className="text-[10px] text-slate-400 mt-0.5 block">Recovery & RTT close</span>
           </button>
         </div>
+
+        {/* Interactive Plain-English Step Explanation Drawer */}
+        {selectedInfoStep !== null && (
+          <div className="mt-2.5 p-3 rounded-xl bg-slate-950 border border-cyan-500/40 text-slate-200 shadow-xl relative animate-fadeIn">
+            <div className="flex items-center justify-between pb-1.5 border-b border-slate-800 mb-2">
+              <div className="flex items-center gap-1.5 text-cyan-400 font-bold text-xs">
+                <Info className="h-4 w-4" />
+                <span>{STEP_INFO[selectedInfoStep - 1].title}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedInfoStep(null)}
+                className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              {STEP_INFO[selectedInfoStep - 1].desc}
+            </p>
+            <div className="mt-2 pt-2 border-t border-slate-800/80 text-[11px] text-cyan-300 font-mono">
+              {STEP_INFO[selectedInfoStep - 1].why}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

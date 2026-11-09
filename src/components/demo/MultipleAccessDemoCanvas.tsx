@@ -148,7 +148,7 @@ export const MultipleAccessDemoCanvas: React.FC = () => {
 
   // Network Topology View
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 select-none overflow-hidden">
+    <div className="relative w-full h-full flex flex-col items-center justify-center p-4 sm:p-6 select-none">
       {/* Background Subtle Radar Effect */}
       <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
         <div className="w-96 h-96 rounded-full border border-cyan-500/40" />

@@ -35,6 +35,12 @@ interface AppContextType {
   sidebarCollapsed: boolean;
   setSidebarCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   toggleSidebarCollapse: () => void;
+  overviewCollapsed: boolean;
+  setOverviewCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+  toggleOverviewCollapse: () => void;
+  mobileOverviewOpen: boolean;
+  setMobileOverviewOpen: (open: boolean) => void;
+  toggleMobileOverview: () => void;
   eventLogCollapsed: boolean;
   setEventLogCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   toggleEventLogCollapse: () => void;
@@ -42,6 +48,7 @@ interface AppContextType {
   // Active Sub-Step
   activeSubStepIndex: number;
   setActiveSubStepIndex: (index: number) => void;
+  selectSubStep: (topicId: string, subStepIndex: number) => void;
 
   // Canvas View Mode
   canvasView: CanvasViewMode;
@@ -125,13 +132,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeSubStepIndex, setActiveSubStepIndex] = useState<number>(0);
 
-  // Mobile Drawer State
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false);
-  const toggleMobileSidebar = useCallback(() => setMobileSidebarOpen(prev => !prev), []);
+  // Initial responsive state detection: default collapsed on tablet/mobile (<1280px)
+  const isLargeDesktop = typeof window !== 'undefined' ? window.innerWidth >= 1280 : true;
 
-  // Collapsible Panels (Desktop & Mobile)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  // Collapsible Panels (Desktop & Tablet)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(!isLargeDesktop);
   const toggleSidebarCollapse = useCallback(() => setSidebarCollapsed(prev => !prev), []);
+
+  const [overviewCollapsed, setOverviewCollapsed] = useState<boolean>(!isLargeDesktop);
+  const toggleOverviewCollapse = useCallback(() => setOverviewCollapsed(prev => !prev), []);
+
+  // Mobile Drawers (<768px): Only one open at a time!
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false);
+  const toggleMobileSidebar = useCallback(() => {
+    setMobileSidebarOpen(prev => {
+      if (!prev) setMobileOverviewOpen(false);
+      return !prev;
+    });
+  }, []);
+
+  const [mobileOverviewOpen, setMobileOverviewOpen] = useState<boolean>(false);
+  const toggleMobileOverview = useCallback(() => {
+    setMobileOverviewOpen(prev => {
+      if (!prev) setMobileSidebarOpen(false);
+      return !prev;
+    });
+  }, []);
+
   const [eventLogCollapsed, setEventLogCollapsed] = useState<boolean>(false);
   const toggleEventLogCollapse = useCallback(() => setEventLogCollapsed(prev => !prev), []);
 
@@ -238,6 +265,105 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setEvents(getPlaceholderEvents(targetTopic));
     }
   }, []);
+
+  // Generic Sub-Step selection handler: scrubs simulation & scrolls Theory tab
+  const selectSubStep = useCallback((topicId: string, subStepIndex: number) => {
+    if (selectedTopicId !== topicId) {
+      setSelectedTopicId(topicId);
+    }
+    setActiveSubStepIndex(subStepIndex);
+
+    // Scrub simulation stage per topic
+    if (topicId === 'osi-model-basics') {
+      const times = [5.60, 4.00, 2.40, 0.00];
+      setSimTime(times[subStepIndex] ?? 0);
+      if (subStepIndex === 0) setSelectedOsiLayer(1);
+      else if (subStepIndex === 1) setSelectedOsiLayer(2);
+      else if (subStepIndex === 2) setSelectedOsiLayer(3);
+      else setSelectedOsiLayer(7);
+    } else if (topicId === 'pcm-voice-digitization') {
+      const times = [0.00, 1.20, 2.40, 3.60];
+      setSimTime(times[subStepIndex] ?? 0);
+    } else if (topicId === 'multipath-free-space-loss') {
+      const times = [0.00, 1.20, 2.40, 3.60];
+      setSimTime(times[subStepIndex] ?? 0);
+    } else if (topicId === 'crc-arq-error-control') {
+      const times = [0.20, 1.20, 1.85, 2.40];
+      setSimTime(times[subStepIndex] ?? 0);
+    } else if (topicId === 'multiple-access-techniques-overview') {
+      const times = [0.00, 1.80, 3.20, 5.00];
+      setSimTime(times[subStepIndex] ?? 0);
+    } else if (topicId === 'fdma-mode') {
+      const times = [0.00, 1.00, 2.00, 3.00];
+      setSimTime(times[subStepIndex] ?? 0);
+      window.dispatchEvent(new CustomEvent('TRIGGER_SUBSTEP_ACTION', { detail: { mode: 'fdma', step: subStepIndex } }));
+    } else if (topicId === 'tdma-mode') {
+      const times = [0.00, 0.50, 1.00, 1.50];
+      setSimTime(times[subStepIndex] ?? 0);
+      window.dispatchEvent(new CustomEvent('TRIGGER_SUBSTEP_ACTION', { detail: { mode: 'tdma', step: subStepIndex } }));
+    } else if (topicId === 'cdma-mode') {
+      const times = [0.00, 0.80, 1.60, 2.40];
+      setSimTime(times[subStepIndex] ?? 0);
+      window.dispatchEvent(new CustomEvent('TRIGGER_SUBSTEP_ACTION', { detail: { mode: 'cdma', step: subStepIndex } }));
+    } else if (topicId === 'dama-mode') {
+      const times = [0.00, 1.00, 2.00, 3.20];
+      setSimTime(times[subStepIndex] ?? 0);
+      window.dispatchEvent(new CustomEvent('TRIGGER_SUBSTEP_ACTION', { detail: { mode: 'dama', step: subStepIndex } }));
+    } else if (topicId === 'unscheduled-contention-mode') {
+      const times = [0.00, 0.80, 1.60, 2.40];
+      setSimTime(times[subStepIndex] ?? 0);
+      window.dispatchEvent(new CustomEvent('TRIGGER_SUBSTEP_ACTION', { detail: { mode: 'contention', step: subStepIndex } }));
+    }
+
+    // Scroll Theory tab to matching concept if element exists
+    setTimeout(() => {
+      const el = document.getElementById(`theory-concept-${subStepIndex}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 60);
+  }, [selectedTopicId, setSelectedTopicId]);
+
+  // Two-way synchronization: Keep activeSubStepIndex synced with live simulation stage
+  useEffect(() => {
+    if (!simPlaying) return;
+
+    if (selectedTopicId === 'osi-model-basics') {
+      const cycleTime = simTime % 12.8;
+      const stage = Math.floor(cycleTime / 0.80);
+      if (stage <= 1) setActiveSubStepIndex(3);
+      else if (stage <= 4) setActiveSubStepIndex(2);
+      else if (stage === 5) setActiveSubStepIndex(1);
+      else if (stage <= 8) setActiveSubStepIndex(0);
+      else if (stage === 9) setActiveSubStepIndex(1);
+      else if (stage <= 12) setActiveSubStepIndex(2);
+      else setActiveSubStepIndex(3);
+    } else if (selectedTopicId === 'pcm-voice-digitization') {
+      const step = Math.min(3, Math.floor((simTime % 4.8) / 1.2));
+      setActiveSubStepIndex(step);
+    } else if (selectedTopicId === 'multipath-free-space-loss') {
+      const step = Math.min(3, Math.floor((simTime % 4.8) / 1.2));
+      setActiveSubStepIndex(step);
+    } else if (selectedTopicId === 'crc-arq-error-control') {
+      const cycleTime = simTime % (simulateBitError ? 6.80 : 3.60);
+      if (cycleTime < 1.0) setActiveSubStepIndex(0);
+      else if (cycleTime < 1.8) setActiveSubStepIndex(1);
+      else if (cycleTime < 2.2) setActiveSubStepIndex(2);
+      else setActiveSubStepIndex(3);
+    } else if (selectedTopicId === 'multiple-access-techniques-overview') {
+      const t = simTime % 6.4;
+      if (t < 1.8) setActiveSubStepIndex(0);
+      else if (t < 3.2) setActiveSubStepIndex(1);
+      else if (t < 5.0) setActiveSubStepIndex(2);
+      else setActiveSubStepIndex(3);
+    } else if (selectedTopicId === 'tdma-mode') {
+      const slot = Math.floor((simTime % 2.0) / 0.5);
+      setActiveSubStepIndex(Math.min(3, Math.max(0, slot)));
+    } else if (selectedTopic.categoryId === 'multiple_access') {
+      const s = Math.min(3, Math.floor((simTime % 4.0) / 1.0));
+      setActiveSubStepIndex(s);
+    }
+  }, [simTime, simPlaying, selectedTopicId, selectedTopic.categoryId, simulateBitError]);
 
   // Compute Demo Packet & ACK Travel Progress
   // Packet 1 travels from t = 0.00s to t = 1.80s (Laptop -> Base Station)
@@ -540,12 +666,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         progressPercent,
         activeSubStepIndex,
         setActiveSubStepIndex,
+        selectSubStep,
         mobileSidebarOpen,
         setMobileSidebarOpen,
         toggleMobileSidebar,
         sidebarCollapsed,
         setSidebarCollapsed,
         toggleSidebarCollapse,
+        overviewCollapsed,
+        setOverviewCollapsed,
+        toggleOverviewCollapse,
+        mobileOverviewOpen,
+        setMobileOverviewOpen,
+        toggleMobileOverview,
         eventLogCollapsed,
         setEventLogCollapsed,
         toggleEventLogCollapse,

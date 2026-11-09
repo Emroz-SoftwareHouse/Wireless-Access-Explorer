@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import { useMultipleAccess } from '../context/MultipleAccessSimulator';
 import { CanvasViewMode, SimSpeed } from '../types';
@@ -61,6 +61,9 @@ export const NetworkCanvas: React.FC = () => {
   // Maximize / Fullscreen state
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
 
+  // Viewport container ref for measuring boundary limits
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+
   // Pan and Zoom state for comfortable view
   const [zoom, setZoom] = useState<number>(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -82,44 +85,83 @@ export const NetworkCanvas: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isMaximized]);
 
-  // Reset zoom & pan when topic changes
+  // Pan boundary clamp: keeps content within visible reach without drifting into the void
+  const clampPan = useCallback((x: number, y: number, currentZoom: number): { x: number; y: number } => {
+    if (!viewportRef.current) return { x, y };
+    const rect = viewportRef.current.getBoundingClientRect();
+    const width = rect.width || 800;
+    const height = rect.height || 500;
+
+    // Generous movement range proportional to viewport and zoom
+    const maxPanX = Math.max(280, (width * 0.55) * currentZoom);
+    const maxPanY = Math.max(180, (height * 0.55) * currentZoom);
+
+    return {
+      x: Math.max(-maxPanX, Math.min(maxPanX, x)),
+      y: Math.max(-maxPanY, Math.min(maxPanY, y)),
+    };
+  }, []);
+
+  // Reset zoom & pan when topic or view mode changes
   useEffect(() => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
-  }, [selectedTopic.id]);
+  }, [selectedTopic.id, canvasView]);
 
-  // Fit to View action
+  // Fit to View action: restores default centered position
   const handleFitToView = () => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
   };
 
   const handleZoomIn = () => {
-    setZoom((z) => Math.min(1.8, Number((z + 0.15).toFixed(2))));
+    setZoom((z) => {
+      const next = Math.min(1.8, Number((z + 0.15).toFixed(2)));
+      setPan((p) => clampPan(p.x, p.y, next));
+      return next;
+    });
   };
 
   const handleZoomOut = () => {
-    setZoom((z) => Math.max(0.65, Number((z - 0.15).toFixed(2))));
+    setZoom((z) => {
+      const next = Math.max(0.65, Number((z - 0.15).toFixed(2)));
+      setPan((p) => clampPan(p.x, p.y, next));
+      return next;
+    });
   };
 
-  // Drag-to-pan handlers on canvas viewport background
-  const handleMouseDown = (e: React.MouseEvent) => {
-    // Only drag when clicking on canvas background directly, not on interactive buttons
-    if ((e.target as HTMLElement).closest('button, input, select, .no-pan')) return;
+  // Unified Pointer Drag-to-pan handlers (Mouse & Touch)
+  const handlePointerDown = (e: React.PointerEvent) => {
+    // Only drag on canvas background, not interactive buttons, inputs, sliders, or no-pan zones
+    if ((e.target as HTMLElement).closest('button, input, select, a, .no-pan')) return;
+
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {
+      // Ignored if capture unsupported
+    }
+
     setIsDragging(true);
     dragStartRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging) return;
-    setPan({
-      x: e.clientX - dragStartRef.current.x,
-      y: e.clientY - dragStartRef.current.y,
-    });
+    const rawX = e.clientX - dragStartRef.current.x;
+    const rawY = e.clientY - dragStartRef.current.y;
+    const clamped = clampPan(rawX, rawY, zoom);
+    setPan(clamped);
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (isDragging) {
+      setIsDragging(false);
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch {
+        // Ignored
+      }
+    }
   };
 
   const speeds: SimSpeed[] = [0.5, 1, 2];
@@ -149,11 +191,11 @@ export const NetworkCanvas: React.FC = () => {
         className={`flex flex-col bg-white dark:bg-[#070b14] text-slate-800 dark:text-slate-100 rounded-2xl border transition-all duration-200 shadow-xl select-none ${
           isMaximized
             ? 'fixed inset-0 sm:inset-3 md:inset-6 z-50 rounded-none sm:rounded-2xl border-cyan-500/50 shadow-[0_0_60px_rgba(0,0,0,0.9)] overflow-hidden'
-            : 'flex-1 min-w-0 min-h-[440px] sm:min-h-[480px] lg:min-h-[500px] border-slate-200 dark:border-slate-800/90 relative overflow-hidden'
+            : 'flex-1 min-w-0 min-h-0 h-full border-slate-200 dark:border-slate-800/90 relative overflow-hidden'
         }`}
       >
-        {/* 1. Header Toolbar */}
-        <div className="h-12 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#090d1c]/90 px-3 sm:px-4 flex items-center justify-between shrink-0 z-30">
+        {/* 1. Header Toolbar (Net/Seq/Th tabs + Zoom/Fit/Max) */}
+        <div className="h-11 sm:h-12 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#090d1c] px-3 sm:px-4 flex items-center justify-between shrink-0">
           {/* Left: Tabbed NETWORK / SEQUENCE / THEORY view toggle */}
           <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-900/90 rounded-lg border border-slate-200 dark:border-slate-800">
             <button
@@ -195,13 +237,13 @@ export const NetworkCanvas: React.FC = () => {
           </div>
 
           {/* Center: Context & Mode Info */}
-          <div className="hidden md:flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
+          <div className="hidden xl:flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
             <span>Section:</span>
             <span className={`text-[11px] font-semibold ${categoryInfo.accentText}`}>
               {selectedTopic.sectionRef}
             </span>
             <span className="text-slate-300 dark:text-slate-600">·</span>
-            <span className="text-slate-800 dark:text-slate-300 font-medium truncate max-w-[200px]">
+            <span className="text-slate-800 dark:text-slate-300 font-medium truncate max-w-[180px]">
               {selectedTopic.title}
             </span>
           </div>
@@ -263,87 +305,94 @@ export const NetworkCanvas: React.FC = () => {
           </div>
         </div>
 
-        {/* 2. Interactive Main Canvas Stage (Supports Pan & Zoom without clipping) */}
+        {/* 2. Interactive Main Canvas Viewport (Fixed outer boundary with overflow: hidden) */}
         <div
-          className={`flex-1 relative overflow-hidden flex flex-col items-center justify-center ${
+          ref={viewportRef}
+          className={`flex-1 min-h-0 relative overflow-hidden flex flex-col items-center justify-center touch-none select-none ${
             isDragging ? 'cursor-grabbing' : 'cursor-grab'
           }`}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
         >
-          {/* Zoom/Pan Scaled Layer */}
-          <div
-            className="w-full h-full flex flex-col items-center justify-center transition-transform duration-75 origin-center"
-            style={{
-              transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
-            }}
-          >
-            {canvasView === 'theory' ? (
-              // Stallings Textbook Theory, Formulations, & Review Questions
-              <TheoryView />
-            ) : selectedTopic.id === 'osi-model-basics' ? (
-              // Phase 3.5 OSI 7-Layer Dual-Host Encapsulation & Decapsulation Simulation
-              <OsiModelView />
-            ) : selectedTopic.id === 'pcm-voice-digitization' ? (
-              // Phase 3 PCM Voice Digitization Waveform & Quantizer
-              <PcmVoiceView />
-            ) : selectedTopic.id === 'multipath-free-space-loss' ? (
-              // Phase 3 Multipath & Free-Space Loss Wavefront Simulator
-              <MultipathLossView />
-            ) : selectedTopic.id === 'crc-arq-error-control' ? (
-              // Phase 3 CRC & ARQ Error Control Network Simulator
-              <CrcArqView />
-            ) : isMultipleAccessTopic ? (
-              // Phase 2 Simulator Stage (All 5 modes)
-              <MultipleAccessStage />
-            ) : isDemoActive ? (
-              // Phase 1 Demo (Multiple Access Overview)
-              <MultipleAccessDemoCanvas />
-            ) : (
-              // Dashed-Border Empty State Placeholder for other topics
-              <div className="w-full h-full p-8 flex items-center justify-center no-pan">
-                <div className="w-full max-w-xl border-2 border-dashed border-slate-800 rounded-3xl p-8 flex flex-col items-center text-center bg-slate-900/20 backdrop-blur-sm">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-800/60 border border-slate-700 text-slate-400 mb-3 shadow-lg">
-                    <Layers className="h-7 w-7 text-cyan-400/70" />
-                  </div>
-
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/40 border border-cyan-800/50 text-[11px] font-mono text-cyan-400 mb-3">
-                    <Clock className="h-3 w-3" />
-                    <span>Coming in Later Phase</span>
-                  </div>
-
-                  <h3 className="text-lg font-bold text-white tracking-tight mb-2">
-                    Animation for {selectedTopic.title}
-                  </h3>
-
-                  <p className="text-xs text-slate-400 max-w-md mb-4 leading-relaxed">
-                    Interactive canvas and protocol simulation for this topic will be unlocked in upcoming development phases according to Stallings Chapter 11.
-                  </p>
-
-                  <div className="w-full bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 text-left">
-                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pb-1.5 border-b border-slate-800/80 mb-2">
-                      <span>Planned Stages:</span>
-                      <span className="text-cyan-400">{selectedTopic.subSteps.length} Sections</span>
+          {canvasView === 'theory' ? (
+            // Stallings Textbook Theory (Scrollable document, bypasses pan/zoom transform)
+            <TheoryView />
+          ) : (
+            // INNER PANNABLE / ZOOMABLE CONTENT LAYER (Transforms as a single unified layer)
+            <div
+              className={`w-full h-full flex flex-col items-center justify-center origin-center ${
+                isDragging ? 'transition-none' : 'transition-transform duration-200 ease-out'
+              }`}
+              style={{
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                transformOrigin: 'center center',
+                willChange: isDragging ? 'transform' : 'auto',
+              }}
+            >
+              {selectedTopic.id === 'osi-model-basics' ? (
+                // Phase 3.5 OSI 7-Layer Dual-Host Encapsulation & Decapsulation Simulation
+                <OsiModelView />
+              ) : selectedTopic.id === 'pcm-voice-digitization' ? (
+                // Phase 3 PCM Voice Digitization Waveform & Quantizer
+                <PcmVoiceView />
+              ) : selectedTopic.id === 'multipath-free-space-loss' ? (
+                // Phase 3 Multipath & Free-Space Loss Wavefront Simulator
+                <MultipathLossView />
+              ) : selectedTopic.id === 'crc-arq-error-control' ? (
+                // Phase 3 CRC & ARQ Error Control Network Simulator
+                <CrcArqView />
+              ) : isMultipleAccessTopic ? (
+                // Phase 2 Simulator Stage (All 5 modes)
+                <MultipleAccessStage />
+              ) : isDemoActive ? (
+                // Phase 1 Demo (Multiple Access Overview)
+                <MultipleAccessDemoCanvas />
+              ) : (
+                // Dashed-Border Empty State Placeholder for other topics
+                <div className="w-full h-full p-8 flex items-center justify-center no-pan">
+                  <div className="w-full max-w-xl border-2 border-dashed border-slate-800 rounded-3xl p-8 flex flex-col items-center text-center bg-slate-900/20 backdrop-blur-sm">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-800/60 border border-slate-700 text-slate-400 mb-3 shadow-lg">
+                      <Layers className="h-7 w-7 text-cyan-400/70" />
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
-                      {selectedTopic.subSteps.map((step, idx) => (
-                        <div key={idx} className="flex items-start gap-1.5 text-slate-400 text-[11px]">
-                          <span className="font-mono text-slate-600 mt-0.5">#{idx + 1}</span>
-                          <span className="leading-snug">{step}</span>
-                        </div>
-                      ))}
+
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/40 border border-cyan-800/50 text-[11px] font-mono text-cyan-400 mb-3">
+                      <Clock className="h-3 w-3" />
+                      <span>Coming in Later Phase</span>
+                    </div>
+
+                    <h3 className="text-lg font-bold text-white tracking-tight mb-2">
+                      Animation for {selectedTopic.title}
+                    </h3>
+
+                    <p className="text-xs text-slate-400 max-w-md mb-4 leading-relaxed">
+                      Interactive canvas and protocol simulation for this topic will be unlocked in upcoming development phases according to Stallings Chapter 11.
+                    </p>
+
+                    <div className="w-full bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 text-left">
+                      <div className="flex items-center justify-between text-[11px] font-mono text-slate-400 pb-1.5 border-b border-slate-800/80 mb-2">
+                        <span>Planned Stages:</span>
+                        <span className="text-cyan-400">{selectedTopic.subSteps.length} Sections</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
+                        {selectedTopic.subSteps.map((step, idx) => (
+                          <div key={idx} className="flex items-start gap-1.5 text-slate-400 text-[11px]">
+                            <span className="font-mono text-slate-600 mt-0.5">#{idx + 1}</span>
+                            <span className="leading-snug">{step}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 3. DOCKED BOTTOM CONTROL BAR (Play, Step, Reset, Speed, Clock, Status) */}
-        <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#090d1c] px-3 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-3 shrink-0 z-30 select-none">
+        <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#090d1c] px-3 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-3 shrink-0 select-none">
           {/* Left: Playback Controls */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             <>
@@ -470,7 +519,7 @@ export const NetworkCanvas: React.FC = () => {
 
         {/* 4. PINNED BOTTOM SUMMARY COMPARISON STRIP */}
         {(isMultipleAccessTopic || isDemoActive) && (
-          <div className="w-full border-t border-slate-200 dark:border-slate-800/90 bg-slate-100/90 dark:bg-[#060a14] px-3 py-1.5 z-30">
+          <div className="w-full border-t border-slate-200 dark:border-slate-800/90 bg-slate-100/90 dark:bg-[#060a14] px-3 py-1.5 shrink-0">
             <div className="flex items-center gap-1 overflow-x-auto text-[11px] font-mono scrollbar-none">
               <span className="text-slate-500 font-bold uppercase text-[10px] mr-1.5 shrink-0">
                 Compare:

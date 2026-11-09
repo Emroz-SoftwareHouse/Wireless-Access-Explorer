@@ -15,7 +15,11 @@ import {
   ShieldCheck,
   ShieldAlert,
   AlertTriangle,
-  Flame
+  Flame,
+  PanelRightClose,
+  PanelRightOpen,
+  X,
+  BookOpen
 } from 'lucide-react';
 import { OSI_LAYERS } from './fundamentals/OsiModelView';
 import { useMultipleAccess } from '../context/MultipleAccessSimulator';
@@ -32,6 +36,10 @@ export const OverviewCard: React.FC = () => {
     selectedOsiLayer,
     multipathFreq,
     simulateBitError,
+    overviewCollapsed,
+    toggleOverviewCollapse,
+    mobileOverviewOpen,
+    setMobileOverviewOpen,
   } = useApp();
 
   const {
@@ -50,34 +58,88 @@ export const OverviewCard: React.FC = () => {
   // Compute active delivered count
   const effectiveDelivered = isMultipleAccessTopic ? maDeliveredCount : (isDemoActive ? deliveredPacketsCount : 0);
 
-  return (
-    <div className="w-full lg:w-80 xl:w-96 flex flex-col bg-white dark:bg-[#080c17] text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800/90 rounded-2xl overflow-hidden shadow-xl select-none shrink-0 transition-colors">
-      {/* 1. Header with Badge & Status */}
-      <div className="p-4 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/40">
+  const collapsedRailContent = (
+    <div className="flex flex-col items-center h-full py-2.5 px-1 bg-white dark:bg-[#080c17] text-slate-800 dark:text-slate-100 select-none w-14">
+      {/* Expand Button */}
+      <button
+        onClick={toggleOverviewCollapse}
+        title="Expand Overview & Specs panel"
+        className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-colors mb-3"
+      >
+        <PanelRightOpen className="h-4 w-4" />
+      </button>
+
+      {/* Mini Section Code & Info */}
+      <div className="flex flex-col items-center gap-2 flex-1 w-full">
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-mono font-bold bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-cyan-600 dark:text-cyan-400 shadow-xs">
+          <BookOpen className="h-4 w-4" />
+        </div>
+        <span className="text-[9px] font-mono font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider [writing-mode:vertical-lr] rotate-180 mt-2">
+          {categoryInfo.tabLabel || categoryInfo.label}
+        </span>
+      </div>
+
+      {/* Completion check dot */}
+      <div className="mt-auto pt-2 border-t border-slate-200 dark:border-slate-800 flex flex-col items-center gap-1 w-full text-center">
+        <div 
+          className={`h-2.5 w-2.5 rounded-full ${isCompleted ? 'bg-cyan-500' : 'bg-emerald-500 animate-pulse'}`}
+          title={isCompleted ? 'Topic Completed' : 'Topic In Progress'}
+        />
+        <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500">
+          #{selectedTopic.order}
+        </span>
+      </div>
+    </div>
+  );
+
+  const overviewContent = (
+    <div className="w-full h-full flex flex-col bg-white dark:bg-[#080c17] text-slate-800 dark:text-slate-100 select-none overflow-hidden transition-colors min-w-0">
+      {/* 1. Header with Badge, Collapse Toggle & Status */}
+      <div className="p-3 sm:p-3.5 border-b border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/40 shrink-0">
         <div className="flex items-center justify-between gap-2 mb-2">
           {/* Category kicker */}
           <span className={`text-[10px] font-mono uppercase tracking-wider font-bold ${categoryInfo.accentText}`}>
             {categoryInfo.label}
           </span>
 
-          {/* Active Status Badge */}
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>ACTIVE</span>
+          <div className="flex items-center gap-1.5">
+            {/* Active Status Badge */}
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>ACTIVE</span>
+            </div>
+
+            {/* Desktop / Tablet Collapse Toggle Button */}
+            <button
+              onClick={toggleOverviewCollapse}
+              title="Collapse Overview panel to thin rail"
+              className="hidden md:flex p-1 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-cyan-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+            >
+              <PanelRightClose className="h-4 w-4" />
+            </button>
+
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setMobileOverviewOpen(false)}
+              title="Close Overview drawer"
+              className="md:hidden p-1 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
         {/* Topic Title */}
-        <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-tight leading-snug">
+        <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight leading-snug truncate" title={selectedTopic.title}>
           {selectedTopic.title}
         </h2>
-        <span className="text-[11px] font-mono text-slate-500">
+        <span className="text-[10.5px] font-mono text-slate-500 block truncate">
           Section: {selectedTopic.sectionRef} · Topic #{selectedTopic.order} of 30
         </span>
       </div>
 
       {/* 2. Scrollable Body: Description, Live Telemetry, Spec Table */}
-      <div className="p-4 space-y-4 flex-1 overflow-y-auto">
+      <div className="p-3 sm:p-3.5 space-y-3.5 flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
         {/* Description */}
         <div>
           <h4 className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
@@ -396,10 +458,15 @@ export const OverviewCard: React.FC = () => {
             {selectedTopic.specs.map((row, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between px-3 py-2 text-xs transition-colors hover:bg-slate-100 dark:hover:bg-slate-900/50"
+                className="flex items-center justify-between px-2.5 py-1.5 text-xs transition-colors hover:bg-slate-100 dark:hover:bg-slate-900/50 gap-2"
               >
-                <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px]">{row.label}</span>
-                <span className="text-slate-800 dark:text-slate-200 font-mono text-[11px] text-right font-medium max-w-[170px] truncate" title={row.value}>
+                <span className="text-slate-500 dark:text-slate-400 font-mono text-[10.5px] truncate max-w-[45%] shrink-0">
+                  {row.label}
+                </span>
+                <span
+                  className="text-slate-800 dark:text-slate-200 font-mono text-[10.5px] text-right font-medium truncate max-w-[55%]"
+                  title={row.value}
+                >
                   {row.value}
                 </span>
               </div>
@@ -426,7 +493,7 @@ export const OverviewCard: React.FC = () => {
       </div>
 
       {/* 3. Footer: Mark Topic Complete Toggle Button */}
-      <div className="p-3 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/80">
+      <div className="p-3 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/80 shrink-0">
         <button
           onClick={() => toggleTopicCompleted(selectedTopic.id)}
           className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-semibold transition-all ${
@@ -449,5 +516,32 @@ export const OverviewCard: React.FC = () => {
         </button>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      {/* Desktop & Tablet In-Flow Right Column (>= md) */}
+      <aside className={`hidden md:flex flex-col transition-all duration-200 ${
+        overviewCollapsed ? 'w-14' : 'w-64 lg:w-72 xl:w-76 max-w-[280px] xl:max-w-[300px]'
+      } border-l border-slate-200 dark:border-slate-800 h-full shrink-0 overflow-hidden bg-white dark:bg-[#080c17]`}>
+        {overviewCollapsed ? collapsedRailContent : overviewContent}
+      </aside>
+
+      {/* Mobile Full-Screen Slide-Out Drawer (< md) */}
+      {mobileOverviewOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/75 backdrop-blur-sm transition-opacity"
+            onClick={() => setMobileOverviewOpen(false)}
+          />
+
+          {/* Slide-out Drawer from right */}
+          <div className="relative w-80 max-w-[85vw] h-full z-10 shadow-2xl border-l border-slate-800 bg-white dark:bg-[#080c17] animate-slide-in">
+            {overviewContent}
+          </div>
+        </div>
+      )}
+    </>
   );
 };

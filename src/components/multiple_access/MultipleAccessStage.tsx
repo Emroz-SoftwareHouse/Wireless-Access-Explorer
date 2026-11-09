@@ -97,8 +97,8 @@ export const MultipleAccessStage: React.FC = () => {
 
     const bsRect = bsRef.current.getBoundingClientRect();
     const bsPos = {
-      x: Math.min(1, Math.max(0, (bsRect.left + bsRect.width / 2 - stageRect.left) / stageRect.width)),
-      y: Math.min(1, Math.max(0, (bsRect.top + bsRect.height / 2 - stageRect.top) / stageRect.height)),
+      x: (bsRect.left + bsRect.width / 2 - stageRect.left) / stageRect.width,
+      y: (bsRect.top + bsRect.height / 2 - stageRect.top) / stageRect.height,
     };
 
     const nextPos: Record<string, { x: number; y: number }> = { bs: bsPos };
@@ -107,8 +107,8 @@ export const MultipleAccessStage: React.FC = () => {
       if (el) {
         const dRect = el.getBoundingClientRect();
         nextPos[dev.id] = {
-          x: Math.min(1, Math.max(0, (dRect.left + dRect.width / 2 - stageRect.left) / stageRect.width)),
-          y: Math.min(1, Math.max(0, (dRect.top + dRect.height / 2 - stageRect.top) / stageRect.height)),
+          x: (dRect.left + dRect.width / 2 - stageRect.left) / stageRect.width,
+          y: (dRect.top + dRect.height / 2 - stageRect.top) / stageRect.height,
         };
       } else {
         nextPos[dev.id] = DEFAULT_POSITIONS[dev.id] || { x: 0.5, y: 0.5 };
@@ -133,11 +133,45 @@ export const MultipleAccessStage: React.FC = () => {
     };
   }, [updateNodePositions]);
 
+  // Wire Syllabus sub-steps to simulation actions across all Multiple Access modes
+  useEffect(() => {
+    const handleSubStepAction = (e: Event) => {
+      const customEvent = e as CustomEvent<{ topicId: string; subStepIndex: number }>;
+      const { topicId, subStepIndex } = customEvent.detail;
+      
+      const maModes = ['fdma-mode', 'tdma-mode', 'cdma-mode', 'dama-mode', 'unscheduled-contention-mode'];
+      if (maModes.includes(topicId)) {
+        if (subStepIndex === 0) {
+          if (devices.length > 0) sendPacket(devices[0].id);
+        } else if (subStepIndex === 1) {
+          if (topicId === 'fdma-mode' || topicId === 'cdma-mode') {
+            sendAllPackets();
+          } else if (devices.length > 1) {
+            sendPacket(devices[1].id);
+          }
+        } else if (subStepIndex === 2) {
+          if (devices.length > 2) {
+            sendPacket(devices[2].id);
+          } else {
+            sendAllPackets();
+          }
+        } else if (subStepIndex >= 3) {
+          sendAllPackets();
+        }
+      }
+    };
+
+    window.addEventListener('TRIGGER_SUBSTEP_ACTION', handleSubStepAction);
+    return () => {
+      window.removeEventListener('TRIGGER_SUBSTEP_ACTION', handleSubStepAction);
+    };
+  }, [devices, sendPacket, sendAllPackets]);
+
   // Central Hub position
   const bsPos = nodePositions['bs'] || DEFAULT_POSITIONS['bs'];
 
   return (
-    <div className="relative w-full h-full flex flex-col justify-between p-2 sm:p-3 select-none overflow-hidden text-slate-800 dark:text-slate-100">
+    <div className="relative w-full h-full flex flex-col justify-between p-2 sm:p-3 select-none text-slate-800 dark:text-slate-100">
       {/* 1. Sub-Toolbar: Mode Indicator, Auto-Traffic, Mash All, Add STA (Contention) */}
       <div className="flex flex-wrap items-center justify-between gap-1.5 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-xl z-20 shrink-0 shadow-sm">
         <div className="flex items-center gap-2">
@@ -255,7 +289,7 @@ export const MultipleAccessStage: React.FC = () => {
       )}
 
       {/* 3. Main Interactive Canvas Stage */}
-      <div className="flex-1 relative flex items-center justify-center min-h-[320px] overflow-hidden my-1">
+      <div className="flex-1 min-h-0 w-full relative flex items-center justify-center my-0.5 sm:my-1">
         {canvasView === 'sequence' ? (
           /* SEQUENCE LADDER VIEW */
           <div className="w-full max-w-2xl h-full max-h-[320px] bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-xl p-3 overflow-y-auto font-mono text-xs shadow-md">
@@ -322,7 +356,7 @@ export const MultipleAccessStage: React.FC = () => {
           /* TRUE STAR / HUB-AND-SPOKE TOPOLOGY VIEW */
           <div 
             ref={stageRef} 
-            className="relative w-full h-full max-w-4xl flex items-center justify-between p-2 sm:p-4 my-auto select-none overflow-hidden"
+            className="relative w-full h-full max-w-4xl flex items-center justify-between p-2 sm:p-4 my-auto select-none"
           >
             {/* SVG STAR TOPOLOGY SPOKES LAYER (Underneath cards, connects each device directly to BS-01 center) */}
             <svg 
@@ -550,7 +584,7 @@ export const MultipleAccessStage: React.FC = () => {
             })}
 
             {/* LEFT COLUMN: STA-1 (Top-Left) & STA-2 (Bottom-Left) */}
-            <div className="flex flex-col justify-around h-full py-1 sm:py-3 w-36 lg:w-44 gap-2 z-20 shrink-0">
+            <div className="flex flex-col justify-around h-full py-1 sm:py-2 w-28 sm:w-36 lg:w-40 gap-1.5 sm:gap-2 z-20 shrink-0">
               <div ref={(el) => { deviceRefs.current[devices[0].id] = el; }}>
                 <CompactDeviceCard
                   device={devices[0]}
@@ -646,7 +680,7 @@ export const MultipleAccessStage: React.FC = () => {
             </div>
 
             {/* RIGHT COLUMN: STA-3 (Top-Right) & STA-4 (Bottom-Right) */}
-            <div className="flex flex-col justify-around h-full py-1 sm:py-3 w-36 lg:w-44 gap-2 z-20 shrink-0">
+            <div className="flex flex-col justify-around h-full py-1 sm:py-2 w-28 sm:w-36 lg:w-40 gap-1.5 sm:gap-2 z-20 shrink-0">
               <div ref={(el) => { deviceRefs.current[devices[2].id] = el; }}>
                 <CompactDeviceCard
                   device={devices[2]}
@@ -743,7 +777,7 @@ const CompactDeviceCard: React.FC<{
       <button
         onClick={onSend}
         disabled={isBackingOff}
-        className={`w-full flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-xs font-mono font-bold transition-all min-h-[36px] ${
+        className={`w-full flex items-center justify-center gap-1 py-1 sm:py-1.5 px-2 rounded-lg text-[11px] sm:text-xs font-mono font-bold transition-all min-h-[30px] sm:min-h-[34px] ${
           isBackingOff
             ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-300 dark:border-slate-700/40'
             : 'hover:brightness-110 active:scale-95 shadow-sm text-slate-950'
