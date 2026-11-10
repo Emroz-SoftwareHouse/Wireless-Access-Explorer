@@ -89,42 +89,6 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | null>(null);
 
-// Static placeholder dummy rows for non-demo topics
-function getPlaceholderEvents(topic: Topic): SimEvent[] {
-  return [
-    {
-      no: 1,
-      timeFormatted: '0.00s',
-      timestamp: 0.0,
-      source: 'Transmitter',
-      destination: 'Receiver',
-      type: 'SYSTEM_IDLE',
-      info: `Initial state for ${topic.title} [Phase 1 Skeleton]`,
-      sizeValue: 'Ready',
-    },
-    {
-      no: 2,
-      timeFormatted: '0.25s',
-      timestamp: 0.25,
-      source: 'Control Unit',
-      destination: 'Channel',
-      type: 'CONTROL_POLL',
-      info: `Parameter setup: ${topic.specs[0]?.label || 'Config'} = ${topic.specs[0]?.value || 'Default'}`,
-      sizeValue: '32 b',
-    },
-    {
-      no: 3,
-      timeFormatted: '0.50s',
-      timestamp: 0.5,
-      source: 'Engine',
-      destination: 'Scheduler',
-      type: 'BEACON',
-      info: 'Simulation engine hooked and awaiting Phase 2 event timeline logic',
-      sizeValue: '64 b',
-    },
-  ];
-}
-
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Topics & Navigation
   const [selectedTopicId, setSelectedTopicIdState] = useState<string>('time-division-duplex-simple-tdd');
@@ -259,12 +223,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDeliveredPacketsCount(0);
     setSelectedOsiLayer(null);
     setSimulateBitError(false);
-    const targetTopic = ALL_TOPICS.find(t => t.id === id);
-    if (targetTopic && (targetTopic.categoryId === 'multiple_access' || targetTopic.id === 'multiple-access-techniques-overview' || targetTopic.isImplemented)) {
-      setEvents([]);
-    } else if (targetTopic) {
-      setEvents(getPlaceholderEvents(targetTopic));
-    }
+    setEvents([]);
   }, []);
 
   // Generic Sub-Step selection handler: scrubs simulation & scrolls Theory tab
@@ -460,11 +419,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     processedEventsRef.current.clear();
     lastTimestampRef.current = null;
     setSelectedOsiLayer(null);
-    if (isDemoActive || selectedTopic.categoryId === 'multiple_access' || selectedTopic.isImplemented) {
-      setEvents([]);
-    } else {
-      setEvents(getPlaceholderEvents(selectedTopic));
-    }
+    setEvents([]);
   }, [isDemoActive, selectedTopic]);
 
   const pauseSimulation = useCallback(() => {

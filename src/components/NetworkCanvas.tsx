@@ -420,7 +420,7 @@ export const NetworkCanvas: React.FC = () => {
 
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/40 border border-cyan-800/50 text-[11px] font-mono text-cyan-400 mb-3">
                       <Clock className="h-3 w-3" />
-                      <span>Coming in Later Phase</span>
+                      <span>Scene unavailable</span>
                     </div>
 
                     <h3 className="text-lg font-bold text-white tracking-tight mb-2">
@@ -428,7 +428,7 @@ export const NetworkCanvas: React.FC = () => {
                     </h3>
 
                     <p className="text-xs text-slate-400 max-w-md mb-4 leading-relaxed">
-                      Interactive canvas and protocol simulation for this topic will be unlocked in upcoming development phases according to Stallings Chapter 11.
+                      The interactive scene for this topic could not be loaded. Try reselecting the topic or opening its Theory tab for the lesson.
                     </p>
 
                     <div className="w-full bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 text-left">

@@ -278,7 +278,7 @@ export const OverviewCard: React.FC = () => {
                 <span>Chapter 11 Connection:</span>
               </div>
               <span>
-                In Section 11.1 (Phase 4), ADPCM compresses this exact same 64 kbps stream by 50% down to <strong>32 kbps</strong> with toll voice quality.
+                In Section 11.1, ADPCM codes speech at <strong>32 kbps</strong>, half the nominal rate of a 64 kbps PCM stream, with good voice quality in the textbook example.
               </span>
             </div>
           </div>
@@ -334,7 +334,7 @@ export const OverviewCard: React.FC = () => {
                 <span>Chapter 11 Connection:</span>
               </div>
               <span>
-                This is the propagation physics behind Section 11.2's Fresnel zone clearance, rain attenuation, and millimeter-wave absorption (Phase 5).
+                This is the propagation physics behind Section 11.2's Fresnel zone clearance, rain attenuation, and millimeter-wave absorption.
               </span>
             </div>
           </div>
@@ -381,7 +381,7 @@ export const OverviewCard: React.FC = () => {
                 <span>Chapter 11 Connection:</span>
               </div>
               <span>
-                IEEE 802.16's MAC frame header explicitly includes an 8-bit Header Check Sequence (HCS) and an ARQ indicator bit with sequence numbering (Phase 6).
+                IEEE 802.16's MAC frame header includes an 8-bit Header Check Sequence (HCS); ARQ control information is used where that service is enabled.
               </span>
             </div>
           </div>
@@ -492,7 +492,7 @@ export const OverviewCard: React.FC = () => {
                   </p>
                 </div>
                 <div className="p-2 rounded-lg bg-cyan-50/50 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-800/60 text-[10.5px] text-cyan-900 dark:text-cyan-200 font-mono">
-                  <strong>Forward Reference:</strong> MOS is codified as a QoS requirement in IEEE 802.16 WiMAX (§11.3, Phase 6).
+                  <strong>Connection to WiMAX:</strong> A scheduler can give voice regular transmission opportunities, but the radio link and codec still affect perceived quality.
                 </div>
               </div>
             )}

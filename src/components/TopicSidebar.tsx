@@ -237,7 +237,7 @@ export const TopicSidebar: React.FC = () => {
       {/* Sidebar Footer Info */}
       <div className="p-3 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/60 text-[11px] text-slate-500 flex items-center justify-between">
         <span className="font-mono">30 Topics Loaded</span>
-        <span className="text-cyan-600 dark:text-cyan-400/80 font-mono">Phase 3.5 Active</span>
+        <span className="text-cyan-600 dark:text-cyan-400/80 font-mono">Chapter 11 · 20 lessons</span>
       </div>
     </div>
   );

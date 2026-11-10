@@ -205,7 +205,7 @@ export const TopBar: React.FC = () => {
                   </span>
                 </button>
                 <div className="px-3 py-1.5 text-[10px] text-slate-500 border-t border-slate-200 dark:border-slate-800">
-                  Phase 1: English Only
+                  English is the current language
                 </div>
               </div>
             )}
