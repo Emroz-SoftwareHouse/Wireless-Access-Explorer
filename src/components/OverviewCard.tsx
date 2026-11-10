@@ -54,6 +54,7 @@ export const OverviewCard: React.FC = () => {
   const categoryInfo = CATEGORIES[selectedTopic.categoryId];
   const isMultipleAccessTopic = selectedTopic.categoryId === 'multiple_access';
   const hasChapter11PacketFlow = selectedTopic.categoryId === 'wll' || selectedTopic.categoryId === 'wimax';
+  const isChapter11Topic = selectedTopic.categoryId === 'cordless' || hasChapter11PacketFlow;
   const activeOsiLayerInfo = selectedOsiLayer ? OSI_LAYERS.find(l => l.layerNumber === selectedOsiLayer) : null;
 
   // Compute active delivered count
@@ -487,7 +488,7 @@ export const OverviewCard: React.FC = () => {
                     4.0 – 4.5 MOS (Wireline Equivalent)
                   </span>
                   <p className="text-[10.5px] text-slate-600 dark:text-slate-400 leading-snug mt-1">
-                    Formal 5-point subjective listening test. ADPCM at 32 kbps achieves MOS 4.1, indistinguishable from wireline copper.
+                    MOS is an average listener rating from 1 to 5. The textbook shows ADPCM at 32 kbps near 4.1 in its example; actual scores vary with the test.
                   </p>
                 </div>
                 <div className="p-2 rounded-lg bg-cyan-50/50 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-800/60 text-[10.5px] text-cyan-900 dark:text-cyan-200 font-mono">
@@ -505,20 +506,20 @@ export const OverviewCard: React.FC = () => {
                 <span>Live Simulation State</span>
               </span>
               <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono font-medium">
-                {isMultipleAccessTopic ? `${mode.toUpperCase()} Active` : isDemoActive ? 'Demo Active' : 'Standby'}
+                {isMultipleAccessTopic ? `${mode.toUpperCase()} Active` : isDemoActive ? 'Demo Active' : isChapter11Topic && simPlaying ? 'Playing' : 'Standby'}
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs">
               {/* Live Packets Delivered */}
               <div className="p-2 rounded-lg bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs">
-                <span className="text-[10px] text-slate-500 block font-mono">{selectedTopic.categoryId === 'wll' ? 'Path Animation' : 'Packets Delivered'}</span>
+                <span className="text-[10px] text-slate-500 block font-mono">{isChapter11Topic ? 'Teaching scene' : 'Packets Delivered'}</span>
                 <div className="flex items-baseline gap-1 mt-0.5">
                   <span className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 tabular-nums">
-                    {selectedTopic.categoryId === 'wll' ? (simPlaying ? 'Moving' : 'Paused') : effectiveDelivered}
+                    {isChapter11Topic ? (simPlaying ? 'Playing' : 'Paused') : effectiveDelivered}
                   </span>
                   <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                    {selectedTopic.categoryId === 'wll' ? 'teaching model' : isMultipleAccessTopic ? 'received' : '/ 2 max'}
+                    {isChapter11Topic ? 'illustrative' : isMultipleAccessTopic ? 'received' : '/ 2 max'}
                   </span>
                 </div>
               </div>

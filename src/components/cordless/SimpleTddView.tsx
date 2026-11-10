@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { MathFormula } from '../common/MathFormula';
-import { Radio, ArrowRight, ArrowLeft, Info, Gauge, Sparkles, Clock } from 'lucide-react';
+import { Radio, ArrowRight, ArrowLeft, Info, Gauge, Sparkles, Clock, Home, Phone, UserRound } from 'lucide-react';
 
 export const SimpleTddView: React.FC = () => {
   const { simTime, simPlaying, simSpeed } = useApp();
@@ -25,6 +25,7 @@ export const SimpleTddView: React.FC = () => {
   // Downlink: Tb + Tp + Tg, Uplink: Tb + Tp + Tg
   const halfCycle = tb + tp + tg;
   const fullCycle = 2 * halfCycle;
+  const walkerX = 69 + Math.sin(simTime * 0.65) * 8;
 
   // VISUAL PACING REFINEMENT (Phase 4.1):
   // At 1x speed, map one full ping-pong cycle to 8.0 visual seconds so users can comfortably
@@ -146,6 +147,21 @@ export const SimpleTddView: React.FC = () => {
 
       {/* 2. Visual Air-Interface & Timeline Canvas */}
       <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 sm:p-5 shadow-sm flex flex-col gap-4">
+        <div className="rounded-xl border border-cyan-400/30 bg-cyan-50/50 p-2 dark:bg-cyan-950/10">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-1 text-[11px]"><strong>Top-down home: a cordless phone stays linked to its nearby base</strong><span className="text-slate-500">Diagram · not to scale</span></div>
+          <div role="img" aria-label="Top-down house showing a telephone-line-connected cordless base and a person carrying a handset inside its local radio area" className="relative h-36 overflow-hidden rounded-xl border-2 border-slate-400/40 bg-[#e8ded0] dark:bg-[#263747]">
+            <div className="absolute inset-2 rounded-lg border-4 border-slate-500/60" />
+            <div className="absolute left-1/2 top-2 bottom-2 border-l-4 border-slate-500/40" />
+            <div className="absolute left-[10%] top-[8%] text-[9px] font-bold text-slate-600 dark:text-slate-300">Study</div>
+            <div className="absolute right-[10%] top-[8%] text-[9px] font-bold text-slate-600 dark:text-slate-300">Living room</div>
+            <div className="absolute inset-y-5 left-[12%] right-[8%] rounded-[50%] border-2 border-dashed border-cyan-500/70 bg-cyan-500/10" />
+            <div className="absolute left-[22%] top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg border border-cyan-500 bg-white p-1.5 text-center shadow-md dark:bg-slate-900"><Phone className="mx-auto h-5 w-5 text-cyan-600" /><span className="block text-[8px] font-bold">Cordless base</span></div>
+            <div className="absolute top-1/2 h-0.5 border-t-2 border-dashed border-cyan-500" style={{ left: '32%', width: `${Math.max(25, walkerX - 37)}%` }} />
+            <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg border border-emerald-500 bg-white p-1.5 text-center shadow-md transition-[left] duration-75 dark:bg-slate-900" style={{ left: `${walkerX}%` }}><UserRound className="mx-auto h-5 w-5 text-emerald-600" /><span className="block text-[8px] font-bold">Caller + handset</span></div>
+            <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded bg-white/85 px-1.5 py-0.5 text-[8px] font-semibold dark:bg-slate-900/85"><Home className="h-3 w-3" />Telephone line enters the base</div>
+          </div>
+          <p className="mt-2 text-[11px] leading-snug text-slate-600 dark:text-slate-300">The caller can move around the home. The base remains fixed and connects to the telephone network. Cyan and green bursts in the timing view below take turns on one radio carrier.</p>
+        </div>
         {/* Node Pair Illustration (Base Station <-> Handset) */}
         <div className="relative flex items-center justify-between px-2 sm:px-8 py-2">
           {/* Base Station Node */}

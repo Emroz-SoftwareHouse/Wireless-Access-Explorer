@@ -331,7 +331,7 @@ export const ALL_TOPICS: Topic[] = [
     categoryId: 'cordless',
     sectionRef: '11.1',
     description: 'Comparative analysis of dual-carrier FDD vs asymmetric dynamic TDD slots.',
-    fullDescription: 'Traditional cellular systems utilize separate frequency bands for forward and reverse links (FDD/FDMA), requiring dual transceivers and fixed symmetrical bandwidth. TDMA/TDD uses a single carrier for both directions, enabling antenna reciprocity against fast fading and asymmetric slot allocation.',
+    fullDescription: 'Frequency division duplex (FDD) separates uplink and downlink by carrier frequency, while time division duplex (TDD) can alternate directions on one carrier. TDMA/TDD can allocate different numbers of slots to each direction. A recent, calibrated same-carrier channel measurement may help antenna selection, but it does not guarantee reception.',
     subSteps: [
       'RF duplexer elimination and transceiver hardware simplification',
       'Spatial antenna diversity using channel reciprocity on forward bursts',
@@ -425,11 +425,11 @@ export const ALL_TOPICS: Topic[] = [
     categoryId: 'wll',
     sectionRef: '11.2',
     description: 'Fixed wireless access alternatives to copper subscriber loops and cable modems.',
-    fullDescription: 'Wireless Local Loop (WLL), or Fixed Wireless Access, connects subscribers to the PSTN or Internet via radio links instead of physical copper wire. WLL provides rapid deployment, lower infrastructure trenching costs, and superior line-of-sight signal quality.',
+    fullDescription: 'Wireless Local Loop (WLL), or fixed wireless access, replaces the last physical subscriber cable with a radio link from a fixed building to an operator base station. It can avoid trenching and reach places where new cable is costly or slow to install, but service quality depends on coverage, interference, weather, and capacity. IEEE 802.16/WiMAX is one possible technology for delivering WLL, not an alternative service category.',
     subSteps: [
       'Subscriber loop architecture: Base station antenna to rooftop receiver',
       'Cost economics: Trenching cables vs wireless base station installation',
-      'Deployment speed: Weeks for wireless vs months/years for cable plant',
+      'Deployment speed and cost depend on existing infrastructure, permissions, and site work',
       'Fixed directional antennas overcoming mobile multipath challenges',
     ],
     osiLayers: [1, 2],

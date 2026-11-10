@@ -80,13 +80,11 @@ export const TdmaTddVsFdmaView: React.FC = () => {
   const rssiB = isFadingAntB ? -90 : -64;
   const deltaRssi = Math.abs(rssiB - rssiA);
 
-  // Handset received quality under TDD vs FDD:
-  // In TDD: Reciprocity holds because f_DL = f_UL = 1.9 GHz -> Handset receives strong signal via Ant B!
-  // In FDD: Reciprocity FAILS because f_DL = 2.1 GHz != f_UL = 1.92 GHz -> Handset may hit fade anyway!
-  const handsetDownlinkSnr = compareFdd ? 8 : 28; // dB
+  // Same-carrier TDD measurements can guide a prompt return transmission;
+  // separate-carrier FDD needs its own downlink measurement or feedback.
   const handsetDownlinkStatus = compareFdd 
-    ? 'FDD Warning: Reciprocity failed! Forward channel uncorrelated (SNR 8 dB, packet dropped)'
-    : 'TDD Success: Channel reciprocity guaranteed high SNR (+28 dB) at handset!';
+    ? 'Uplink and downlink use different carriers. The uplink antenna choice alone does not predict downlink quality; measure or report that channel separately.'
+    : 'The same carrier can make a recent uplink measurement useful for the return path, provided the channel stays stable and radios are calibrated.';
 
   // Normalized distance for spatial waveform (0 to 3 wavelengths)
   const spatialPos = (effectiveSimTime * 0.4) % 3.0;
@@ -198,10 +196,10 @@ export const TdmaTddVsFdmaView: React.FC = () => {
                     ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/50 shadow-xs'
                     : 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/25'
                 }`}
-                title="Toggle FDD mode to see why channel reciprocity fails when uplink and downlink use different frequencies!"
+                title="Compare same-carrier TDD with separate-carrier FDD channel measurements"
               >
                 <RefreshCw className="h-3 w-3" />
-                <span>{compareFdd ? 'Mode: FDD (Reciprocity Fails!)' : 'Mode: TDD (Reciprocity Active ✓)'}</span>
+                <span>{compareFdd ? 'Mode: FDD · separate carriers' : 'Mode: TDD · same carrier'}</span>
               </button>
             </div>
 
@@ -483,7 +481,7 @@ export const TdmaTddVsFdmaView: React.FC = () => {
                   <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
                 )}
                 <div className="leading-snug">
-                  <strong>{compareFdd ? 'FDD Reciprocity Failure: ' : 'TDD Channel Reciprocity: '}</strong>
+                  <strong>{compareFdd ? 'FDD measurement: ' : 'TDD channel estimate: '}</strong>
                   <span>{handsetDownlinkStatus}</span>
                 </div>
               </div>
@@ -491,8 +489,8 @@ export const TdmaTddVsFdmaView: React.FC = () => {
 
             {/* Reciprocity Math note */}
             <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 leading-relaxed">
-              <span className="font-bold text-cyan-600 dark:text-cyan-400">Why Reciprocity Works in TDD: </span>
-              Because TDD uses identical frequency <MathFormula tex={`f_{\\text{DL}} = f_{\\text{UL}} = 1.9\\text{ GHz}`} displayMode={false} /> within the channel coherence time <MathFormula tex={`T_c \\approx 15\\text{ ms}`} displayMode={false} />, electromagnetic path impulse responses are identical: <MathFormula tex={`h_{\\text{DL}}(t) = h_{\\text{UL}}(t)`} displayMode={false} />. In FDD, frequency separation <MathFormula tex={`\\Delta f = 190\\text{ MHz}`} displayMode={false} /> destroys reciprocity, requiring complex multi-antenna circuitry on the handset.
+              <span className="font-bold text-cyan-600 dark:text-cyan-400">What reciprocity means: </span>
+              In a calibrated TDD link, uplink and downlink use the same carrier at nearby times. Their propagation paths can therefore be similar while the channel remains stable. This helps the base choose an antenna for its reply. FDD uses separate carriers, so the uplink observation alone cannot predict the downlink fade. Neither duplex mode guarantees success or failure; the signal and interference still determine reception.
             </div>
           </div>
         )}

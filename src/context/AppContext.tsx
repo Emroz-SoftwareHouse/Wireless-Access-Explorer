@@ -511,6 +511,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
+    if (selectedTopic.categoryId === 'cordless' || selectedTopic.categoryId === 'wll' || selectedTopic.categoryId === 'wimax') {
+      selectSubStep(selectedTopic.id, (activeSubStepIndex + 1) % selectedTopic.subSteps.length);
+      return;
+    }
+
     if (!isDemoActive) {
       setSimTime(prev => Number((prev + 0.25).toFixed(2)));
       return;
@@ -541,7 +546,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return nextTime;
     });
-  }, [isDemoActive, isMultipleAccessTopic, selectedTopic.id]);
+  }, [activeSubStepIndex, isDemoActive, isMultipleAccessTopic, selectedTopic, selectSubStep]);
 
   // Handle Event Triggers based on simTime
   useEffect(() => {

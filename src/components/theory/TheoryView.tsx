@@ -15,8 +15,9 @@ import {
   Sparkles 
 } from 'lucide-react';
 import { MathFormula } from '../common/MathFormula';
+import { CHAPTER11_THEORY } from './chapter11Theory';
 
-interface TopicTheory {
+export interface TopicTheory {
   title: string;
   chapterRef: string;
   stallingsCitation: string;
@@ -43,6 +44,7 @@ const StudyLinks: React.FC<{ categoryId: string }> = ({ categoryId }) => {
 };
 
 const THEORY_DATABASE: Record<string, TopicTheory> = {
+  ...CHAPTER11_THEORY,
   'osi-model-basics': {
     title: 'OSI 7-Layer Protocol Architecture & Wireless Encapsulation',
     chapterRef: 'Section 1.4 & Chapter 11 Architecture',
@@ -338,8 +340,7 @@ const THEORY_DATABASE: Record<string, TopicTheory> = {
       },
       {
         heading: 'Channel Turnaround Guard Time (Tg)',
-        body: 'Following each burst, a quiescent guard interval Tg is required for two physical reasons: (1) transceiver circuitry turnaround time (switching between transmit and receive states), and (2) allowing delayed multipath reflections from the preceding burst to decay below the noise floor before the opposite station transmits.',
-        formula: 'T_g \\ge 2 T_p + T_{\\text{switch}}',
+        body: 'Following each burst, a quiescent guard interval Tg gives the radios time to switch direction and prevents delayed energy from one turn overlapping the next. The required guard depends on the actual path and equipment; this lesson does not assume a universal minimum.',
       },
       {
         heading: 'Actual Transmission Data Rate Formula (A)',
@@ -359,7 +360,7 @@ const THEORY_DATABASE: Record<string, TopicTheory> = {
     title: 'TDMA/TDD vs. TDMA/FDMA: Diversity & Dynamic Capacity',
     chapterRef: 'Section 11.1 Cordless Systems — TDMA/TDD Advantages',
     stallingsCitation: 'William Stallings, Wireless Communications and Networks, 2nd ed., Chapter 11.1 (pp. 321-322)',
-    summary: 'Cordless systems operate under three severe engineering considerations: (1) modest range with low power, (2) inexpensive, simple handset design, and (3) limited frequency flexibility. Traditional cellular networks deploy dual-carrier TDMA/FDMA with separate forward and reverse frequency bands, requiring bulky RF duplexers. TDMA/TDD alternates transmission on a single carrier, conferring two decisive advantages: spatial antenna diversity using channel reciprocity, and dynamic capacity allocation for asymmetric traffic.',
+    summary: 'Cordless design balances modest range, low cost, and limited spectrum. TDMA/TDD alternates directions on one carrier. Compared with separate-frequency duplexing, it can make recent antenna measurements more useful for a prompt reply and can shift time slots toward the busier direction.',
     keyConcepts: [
       {
         heading: 'RF Duplexer Elimination and Handset Simplification',
@@ -367,20 +368,20 @@ const THEORY_DATABASE: Record<string, TopicTheory> = {
       },
       {
         heading: 'Spatial Antenna Diversity & Channel Reciprocity',
-        body: 'Fast fading changes rapidly over distance and frequency. Dual-antenna spatial diversity on handsets is impractical due to physical size and cost constraints. With TDD, because forward and reverse channels share the identical carrier frequency within the coherence time Tc, channel propagation characteristics are identical (electromagnetic reciprocity). The base station measures incoming handset bursts across two diversity antennas (spaced >= lambda apart), selects the stronger antenna, and immediately uses that same antenna for the subsequent forward transmission.',
+        body: 'Fast fading changes with movement, time, and frequency. A base station can compare two separated receive antennas. In calibrated TDD, a recent uplink measurement on the same carrier can help choose an antenna for a prompt downlink reply while the channel remains sufficiently stable. This is useful, not a guarantee of reception.',
         formula: 'H_{\\text{DL}}(f, t) \\approx H_{\\text{UL}}(f, t) \\quad \\text{when } \\Delta t < T_c \\text{ and } f_{\\text{DL}} = f_{\\text{UL}}',
       },
       {
         heading: 'Dynamic Capacity Allocation for Asymmetric Traffic',
-        body: 'For data applications (web browsing, multimedia streaming), downstream traffic typically outweighs upstream requests by 5:1 to 10:1. In fixed dual-carrier FDMA systems, equal bandwidth on forward and reverse carriers wastes up to half the available spectrum. TDD controllers dynamically shift the slot boundary within each repetitive frame to allocate up to 80-85% of time slots to the downlink as demand fluctuates.',
+        body: 'For some data applications, downstream demand exceeds upstream demand. A TDD controller can assign more time slots to the direction with higher offered load. The useful split depends on traffic and the standard profile; no fixed ratio is guaranteed.',
         formula: '\\text{Asymmetric Ratio} = \\frac{N_{\\text{Downlink}}}{N_{\\text{Uplink}}} \\approx \\frac{\\text{Offered Load}_{\\text{DL}}}{\\text{Offered Load}_{\\text{UL}}}',
       },
       {
         heading: 'Coherence Bandwidth and Frequency Invariance',
-        body: 'In FDD systems, the separation between forward and reverse bands exceeds the channel coherence bandwidth (Delta f > (Delta f)c), meaning a fade on the uplink gives zero information about fading on the downlink. TDD\'s zero frequency separation guarantees that constructive and destructive multipath states remain invariant across both directions.',
+        body: 'Separate FDD carriers can fade differently, so the uplink antenna measurement alone may not predict downlink quality. Same-carrier TDD can use a recent estimate if the channel has not changed much; calibration and timing matter.',
       },
     ],
-    protocolStandardCallout: 'Because DECT handsets are inexpensive consumer items, they feature a single omnidirectional antenna. The DECT base station employs two antennas and uses selection diversity: it measures the incoming burst from the handset, chooses the stronger antenna, and uses that exact antenna for the subsequent forward transmission on the identical carrier frequency.',
+    protocolStandardCallout: 'The textbook uses base-station antenna selection as an example of why same-carrier TDD can help with fast fading. Real performance depends on antenna placement, calibration, channel change, and interference.',
     reviewQuestions: [
       'Why does spatial antenna selection diversity reciprocity fail in dual-carrier FDMA/FDD systems?',
       'Identify the three design considerations that dictate cordless system architecture according to Stallings.',
@@ -472,15 +473,15 @@ const THEORY_DATABASE: Record<string, TopicTheory> = {
       },
       {
         heading: 'Comparative Analysis: PCM, ADPCM, CELP, and LPC',
-        body: 'Figure 11.7 summarizes coder quality versus bit rate: Uncoded speech (64k) scores 4.4; PCM G.711 (64k) scores 4.3; ADPCM G.726 (32k) scores 4.1; LD-CELP G.728 (16k) scores 4.0; cellular CELP G.729 (8k) scores 3.6; and tactical LPC (2.4k) drops to 2.4 (intelligible but synthetic). Notice that ADPCM at 32 kbps achieves full toll quality while cutting bandwidth consumption by half.',
+        body: 'Figure 11.7 compares illustrative subjective scores: uncoded speech is the reference and has no encoded bitrate; PCM at 64 kbps and ADPCM at 32 kbps score near the good-quality range. Lower-bitrate coders trade more compression for possible audible artifacts. Scores vary with listeners and test material.',
         formula: '\\text{MOS}(\\text{ADPCM 32k}) = 4.1 \\approx \\text{MOS}(\\text{PCM 64k}) = 4.3',
       },
       {
         heading: 'MOS as a Quality of Service (QoS) Standard in IEEE 802.16',
-        body: 'The MOS scale is not merely an academic measure; it is codified as an enforceable Quality of Service (QoS) performance standard in specifications like IEEE 802.16 WiMAX (§11.3). The 802.16 MAC layer defines its Unsolicited Grant Service (UGS) specifically to guarantee the latency, jitter, and throughput required to sustain MOS > 4.0 voice sessions.',
+        body: 'MOS comes from listening tests. Network QoS mechanisms such as 802.16 UGS can allocate periodic capacity to voice, but scheduling alone cannot guarantee a particular MOS: codec behavior, packet loss, delay, radio quality, and test conditions all matter.',
       },
     ],
-    protocolStandardCallout: 'Figure 11.7 reveals that ADPCM at 32 kbps achieves a MOS of 4.1, indistinguishable from wired PSTN copper. IEEE 802.16 WiMAX (§11.3) defines its Unsolicited Grant Service (UGS) explicitly to guarantee the delay and throughput required to sustain MOS > 4.0 voice sessions.',
+    protocolStandardCallout: 'The textbook uses ADPCM at 32 kbps as an example of good voice quality. UGS in 802.16 provides periodic grants for constant-rate traffic; it does not specify or guarantee an MOS score.',
     reviewQuestions: [
       'Why do formal subjective listening tests matter more than objective SNR calculations for speech coding?',
       'Why does even uncoded analog studio speech fail to achieve a unanimous 5.0 rating on the MOS scale?',

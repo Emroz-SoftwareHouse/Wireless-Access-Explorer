@@ -4,6 +4,7 @@ import { useMultipleAccess } from '../context/MultipleAccessSimulator';
 import { CanvasViewMode, SimSpeed } from '../types';
 import { OsiModelView } from './fundamentals/OsiModelView';
 import { SimulationGuide } from './SimulationGuide';
+import { Chapter11Orientation } from './chapter11/Chapter11Orientation';
 import { StepSequenceView } from './StepSequenceView';
 import { CATEGORIES } from '../data/topics';
 import { 
@@ -92,6 +93,7 @@ export const NetworkCanvas: React.FC = () => {
   const categoryInfo = CATEGORIES[selectedTopic.categoryId];
   const isMultipleAccessTopic = selectedTopic.categoryId === 'multiple_access';
   const hasChapter11PacketFlow = selectedTopic.categoryId === 'wll' || selectedTopic.categoryId === 'wimax';
+  const isChapter11Topic = selectedTopic.categoryId === 'cordless' || hasChapter11PacketFlow;
   const effectiveDelivered = isMultipleAccessTopic
     ? maDeliveredCount
     : (isDemoActive || hasChapter11PacketFlow ? deliveredPacketsCount : 0);
@@ -453,6 +455,7 @@ export const NetworkCanvas: React.FC = () => {
 
         {canvasView === 'network' && (
           <>
+            <Chapter11Orientation />
             {/* Plain-language teaching guide shared by every simulation. */}
             <SimulationGuide />
 
@@ -569,8 +572,8 @@ export const NetworkCanvas: React.FC = () => {
             ) : (
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 shadow-xs">
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                <span>{selectedTopic.categoryId === 'wll' ? 'Path animation:' : 'Delivered:'}</span>
-                <strong className="text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">{selectedTopic.categoryId === 'wll' ? (simPlaying ? 'Moving' : 'Paused') : effectiveDelivered}</strong>
+                <span>{isChapter11Topic ? 'Teaching scene:' : 'Delivered:'}</span>
+                <strong className="text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">{isChapter11Topic ? (simPlaying ? 'Playing' : 'Paused') : effectiveDelivered}</strong>
               </div>
             )}
 
