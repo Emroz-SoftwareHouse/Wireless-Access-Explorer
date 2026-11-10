@@ -26,6 +26,22 @@ interface TopicTheory {
   reviewQuestions: string[];
 }
 
+const chapter11Pdf = '/assets/aistudio/pdfcoffee.com_wireless-communications-and-networking-by-william-stallings-2nd-edition-pdf-free_compressed_6bc17066.pdf';
+const chapter11Sources: Record<string, { label: string; url: string }> = {
+  cordless: { label: 'ETSI DECT standards and specifications', url: 'https://www.etsi.org/technical-groups/dect/' },
+  wll: { label: 'ITU-R P.530 fixed radio link guidance', url: 'https://www.itu.int/rec/R-REC-P.530' },
+  wimax: { label: 'IEEE 802.16 standard overview', url: 'https://standards.ieee.org/ieee/485/6996/' },
+};
+
+const StudyLinks: React.FC<{ categoryId: string }> = ({ categoryId }) => {
+  const source = chapter11Sources[categoryId];
+  if (!source) return null;
+  return <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
+    <a href={chapter11Pdf} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-cyan-500/40 px-2.5 py-1.5 text-cyan-700 underline dark:text-cyan-300"><FileText className="h-3 w-3" />Open Chapter 11 textbook PDF</a>
+    <a href={source.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-cyan-500/40 px-2.5 py-1.5 text-cyan-700 underline dark:text-cyan-300"><ExternalLink className="h-3 w-3" />{source.label}</a>
+  </div>;
+};
+
 const THEORY_DATABASE: Record<string, TopicTheory> = {
   'osi-model-basics': {
     title: 'OSI 7-Layer Protocol Architecture & Wireless Encapsulation',
@@ -480,17 +496,34 @@ export const TheoryView: React.FC = () => {
 
   if (!theory) {
     return (
-      <div className="w-full h-full p-6 flex flex-col items-center justify-center text-center select-none overflow-y-auto no-pan">
-        <div className="max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-md">
-          <BookOpen className="h-10 w-10 text-cyan-500 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
-            Textbook Theory Excerpt
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
-            Theoretical analysis and textbook derivations for <strong>{selectedTopic.title}</strong> will be loaded in the next curriculum phase.
-          </p>
-          <div className="text-[11px] font-mono text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/40 p-2 rounded-lg border border-cyan-200 dark:border-cyan-800">
-            Source: William Stallings, Wireless Communications and Networks, 2nd ed.
+      <div className="w-full h-full p-3 sm:p-5 flex flex-col select-none overflow-y-auto no-pan gap-3 max-w-4xl mx-auto">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-md">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2 text-cyan-600 dark:text-cyan-400">
+              <BookOpen className="h-5 w-5" />
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider">Study notes</span>
+            </div>
+            <span className="text-[10px] font-mono rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-1">Section {selectedTopic.sectionRef}</span>
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{selectedTopic.title}</h3>
+          <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{selectedTopic.fullDescription}</p>
+          <div className="mt-3 text-[11px] font-mono text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/40 p-2 rounded-lg border border-cyan-200 dark:border-cyan-800">
+            Source: William Stallings, Wireless Communications and Networks, 2nd ed., {selectedTopic.sectionRef}
+          </div>
+          <div className="mt-3"><StudyLinks categoryId={selectedTopic.categoryId} /></div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {selectedTopic.subSteps.map((step, index) => (
+            <div id={`theory-concept-${index}`} key={step} className={`rounded-xl border p-3 transition-all ${activeSubStepIndex === index ? 'border-cyan-400 bg-cyan-500/10 ring-1 ring-cyan-400' : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'}`}>
+              <div className="text-[9px] font-mono font-black uppercase text-cyan-600 dark:text-cyan-400 mb-1">Concept {index + 1}</div>
+              <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-300">{step}</p>
+            </div>
+          ))}
+        </div>
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+          <h4 className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-500 mb-2">Key values from the chapter</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {selectedTopic.specs.map((spec) => <div key={spec.label} className="flex justify-between gap-3 rounded-lg bg-slate-50 dark:bg-slate-950 px-3 py-2 text-[11px]"><span className="text-slate-500">{spec.label}</span><strong className="text-right text-slate-800 dark:text-slate-200">{spec.value}</strong></div>)}
           </div>
         </div>
       </div>
@@ -525,6 +558,7 @@ export const TheoryView: React.FC = () => {
           <FileText className="h-4 w-4 text-cyan-600 dark:text-cyan-400 shrink-0" />
           <span>Citation: {theory.stallingsCitation}</span>
         </div>
+        <div className="mt-3"><StudyLinks categoryId={selectedTopic.categoryId} /></div>
       </div>
 
       {/* Key Concepts with Formulas */}
