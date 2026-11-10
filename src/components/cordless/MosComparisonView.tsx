@@ -9,7 +9,9 @@ import {
   Headphones, 
   Zap, 
   Layers,
-  Award
+  Award,
+  StepForward,
+  RotateCcw
 } from 'lucide-react';
 
 interface CoderData {
@@ -129,8 +131,35 @@ const MOS_SCALE_LEVELS = [
 ];
 
 export const MosComparisonView: React.FC = () => {
+  const { simTime, simPlaying, simSpeed } = useApp();
   const [selectedCoderId, setSelectedCoderId] = useState<string>('adpcm');
+  const [manualOverride, setManualOverride] = useState<boolean>(false);
   const [showTableInterpretation, setShowTableInterpretation] = useState<boolean>(false);
+
+  // PACING REFINEMENT (Phase 4.1):
+  // When simPlaying is active, advance through each coder with 3.2s hold (total cycle = 7 * 3.2 = 22.4s)
+  // so users have ample time to read its MOS score, bit rate, standard, and profile description.
+  const CODER_STEP_TIME = 3.2; // seconds per coder
+  React.useEffect(() => {
+    if (!simPlaying || manualOverride) return;
+    const totalCycle = CODERS.length * CODER_STEP_TIME;
+    const index = Math.floor((simTime % totalCycle) / CODER_STEP_TIME);
+    if (CODERS[index]) {
+      setSelectedCoderId(CODERS[index].id);
+    }
+  }, [simTime, simPlaying, manualOverride]);
+
+  const handleStepCoder = () => {
+    setManualOverride(true);
+    const currentIndex = CODERS.findIndex(c => c.id === selectedCoderId);
+    const nextIndex = (currentIndex + 1) % CODERS.length;
+    setSelectedCoderId(CODERS[nextIndex].id);
+  };
+
+  const handleResetCoders = () => {
+    setManualOverride(false);
+    setSelectedCoderId('adpcm');
+  };
 
   const selectedCoder = CODERS.find(c => c.id === selectedCoderId) || CODERS[2];
 
@@ -145,9 +174,26 @@ export const MosComparisonView: React.FC = () => {
               Mean Opinion Score (MOS) Speech Quality Comparison (Stallings Fig 11.7)
             </span>
           </div>
-          <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
-            ITU-T P.800 Methodology
-          </span>
+          {/* Step & Reset Controls */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={handleStepCoder}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-500 text-slate-950 font-mono text-xs font-bold hover:bg-cyan-400 transition-all shadow-xs"
+            >
+              <StepForward className="h-3 w-3" />
+              <span>Step Coder</span>
+            </button>
+            <button
+              onClick={handleResetCoders}
+              className="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 text-xs"
+              title="Reset to ADPCM"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+            <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 ml-1">
+              ITU-T P.800
+            </span>
+          </div>
         </div>
 
         {/* Toll-Quality Callout Bar */}
@@ -207,7 +253,10 @@ export const MosComparisonView: React.FC = () => {
               return (
                 <div
                   key={coder.id}
-                  onClick={() => setSelectedCoderId(coder.id)}
+                  onClick={() => {
+                    setManualOverride(true);
+                    setSelectedCoderId(coder.id);
+                  }}
                   className="flex-1 flex flex-col items-center cursor-pointer group"
                 >
                   {/* MOS Number Tag */}
@@ -220,7 +269,7 @@ export const MosComparisonView: React.FC = () => {
                   {/* Vertical Bar */}
                   <div className="w-full max-w-[48px] flex flex-col justify-end">
                     <div
-                      className={`w-full rounded-t-lg transition-all duration-300 relative shadow-sm ${
+                      className={`w-full rounded-t-lg transition-all duration-500 relative shadow-sm ${
                         isSelected
                           ? 'bg-cyan-500 ring-2 ring-cyan-400 shadow-[0_0_16px_rgba(6,182,212,0.6)]'
                           : coder.tollQuality
@@ -253,7 +302,7 @@ export const MosComparisonView: React.FC = () => {
         </div>
 
         {/* Selected Coder Detailed Profile Card */}
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex flex-col gap-2">
+        <div key={selectedCoder.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex flex-col gap-2 transition-all duration-300 ease-in-out animate-fadeIn">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold text-slate-900 dark:text-white">

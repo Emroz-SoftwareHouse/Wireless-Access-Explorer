@@ -20,17 +20,23 @@ export const DpcmAdpcmView: React.FC = () => {
   const [isManualStage, setIsManualStage] = useState<boolean>(false);
   const [infoPopup, setInfoPopup] = useState<string | null>(null);
 
+  // PACING REFINEMENT (Phase 4.1):
+  // 1. Stage duration: 8.0s per stage (24.0s total cycle) so user can comfortably read each pipeline stage.
+  // 2. Numerical sample hold: hold sample k for 2.8s so user can read and verify calculations before it advances.
+  // 3. ADPCM adaptation pulse: slow down to 1.25 rad/s (2.5s alternation) instead of rapid flashing.
+  const STAGE_DURATION = 8.0; // seconds per stage
+  const SAMPLE_PERIOD = 2.8;  // seconds to hold each numerical sample calculation
+
   // Sync pipeline stage with simulation timer if auto-playing
   useEffect(() => {
     if (!simPlaying || isManualStage) return;
-    // Each stage runs for 3.6s
-    const stage = Math.min(2, Math.floor((simTime % 10.8) / 3.6));
+    const stage = Math.min(2, Math.floor((simTime % (STAGE_DURATION * 3)) / STAGE_DURATION));
     setPipelineStage(stage);
   }, [simTime, simPlaying, isManualStage]);
 
-  // Sample index k for dynamic real numerical values
-  const k = Math.floor(simTime * 2);
-  const sampleAngle = (simTime * 1.8);
+  // Sample index k held for 2.8s so math is clearly readable
+  const k = Math.floor(simTime / SAMPLE_PERIOD);
+  const sampleAngle = k * 0.95;
   
   // Simulated voice sample m(k): continuous wave
   const mk = Number((1.5 * Math.sin(sampleAngle) + 0.5 * Math.sin(sampleAngle * 2.3)).toFixed(2));
@@ -44,8 +50,8 @@ export const DpcmAdpcmView: React.FC = () => {
   // Reconstructed sample mq(k) = m_hat_q(k) + dq(k)
   const mqk = Number((mHatK + dqk).toFixed(2));
 
-  // Pulse animation for ADPCM coefficient updates
-  const pulseFactor = Math.sin(simTime * 5);
+  // Pulse animation for ADPCM coefficient updates (calm 2.5s alternation)
+  const pulseFactor = Math.sin(simTime * 1.25);
 
   return (
     <div className="w-full h-full flex flex-col p-2 sm:p-4 select-none overflow-y-auto max-w-4xl mx-auto gap-3 text-slate-800 dark:text-slate-100">

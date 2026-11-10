@@ -168,11 +168,18 @@ export const DectArchitectureView: React.FC = () => {
   const [callSetupStep, setCallSetupStep] = useState<number>(0);
   const [isManualStep, setIsManualStep] = useState<boolean>(false);
 
+  // PACING REFINEMENT (Phase 4.1):
+  // Increase procedure duration from 1.4s to 3.2s so users have a clear travel phase (1.6s)
+  // followed by a visible arrived/holding phase (1.6s) to read the procedure name, message type,
+  // and summary before advancing.
+  const STEP_DURATION = 3.2; // seconds per procedure
+  const TRAVEL_DURATION = 1.6; // travel time across corridor
+
   // Sync call setup with simulation timer if playing
   useEffect(() => {
     if (!simPlaying || isManualStep) return;
-    // Advance one step every 1.4 seconds (adjusted by simSpeed)
-    const step = Math.min(7, Math.floor((simTime % 11.2) / 1.4));
+    const totalDuration = MM_PROCEDURES.length * STEP_DURATION;
+    const step = Math.min(MM_PROCEDURES.length - 1, Math.floor((simTime % totalDuration) / STEP_DURATION));
     setCallSetupStep(step);
   }, [simTime, simPlaying, isManualStep]);
 
@@ -189,12 +196,17 @@ export const DectArchitectureView: React.FC = () => {
     setCallSetupStep(0);
   };
 
-  // In-flight message progress (0 to 1)
-  const stepTime = (simTime % 1.4) / 1.4;
+  // In-flight message progress (0 to 1) and hold state
+  const tInStep = (simTime % STEP_DURATION);
+  const isHolding = !simPlaying || isManualStep ? false : tInStep >= TRAVEL_DURATION;
+  const travelT = isManualStep || !simPlaying
+    ? 1.0
+    : Math.min(1.0, tInStep / TRAVEL_DURATION);
+
   const messageProgress = activeProcedure.direction === 'to_bs'
-    ? stepTime
+    ? travelT
     : activeProcedure.direction === 'to_ms'
-    ? 1 - stepTime
+    ? 1 - travelT
     : 0.5;
 
   return (
@@ -334,6 +346,7 @@ export const DectArchitectureView: React.FC = () => {
                   {activeProcedure.direction === 'to_bs' && <ArrowRight className="h-3 w-3" />}
                   {activeProcedure.direction === 'to_ms' && <ArrowLeft className="h-3 w-3" />}
                   <span>{activeProcedure.label.split(' ')[0]}</span>
+                  {isHolding && <CheckCircle2 className="h-2.5 w-2.5 text-emerald-950 animate-pulse" />}
                 </div>
               </div>
             </div>
@@ -482,6 +495,11 @@ export const DectArchitectureView: React.FC = () => {
                 <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-100 dark:bg-cyan-950 text-cyan-800 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800">
                   {activeProcedure.label}
                 </span>
+                {isHolding && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-400 font-bold animate-pulse">
+                    Delivered (Reading...)
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug mt-0.5">
                 {activeProcedure.summary}

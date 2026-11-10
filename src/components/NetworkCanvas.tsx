@@ -13,6 +13,10 @@ import { TdmaTddVsFdmaView } from './cordless/TdmaTddVsFdmaView';
 import { DectArchitectureView } from './cordless/DectArchitectureView';
 import { DpcmAdpcmView } from './cordless/DpcmAdpcmView';
 import { MosComparisonView } from './cordless/MosComparisonView';
+import { FdmaStage } from './multiple_access/FdmaStage';
+import { TdmaStage } from './multiple_access/TdmaStage';
+import { CdmaStage } from './multiple_access/CdmaStage';
+import { DamaStage } from './multiple_access/DamaStage';
 import { TheoryView } from './theory/TheoryView';
 import { CATEGORIES } from '../data/topics';
 import { 
@@ -363,8 +367,20 @@ export const NetworkCanvas: React.FC = () => {
               ) : selectedTopic.id === 'mean-opinion-score-comparison' ? (
                 // Phase 4 Cordless Systems: Mean Opinion Score Comparison
                 <MosComparisonView />
+              ) : selectedTopic.id === 'fdma-mode' ? (
+                // Dedicated FDMA Multi-Lane RF Spectrum & Filter Bank Simulation
+                <FdmaStage />
+              ) : selectedTopic.id === 'tdma-mode' ? (
+                // Dedicated TDMA Cyclic Frame & Queue Buffer Simulation
+                <TdmaStage />
+              ) : selectedTopic.id === 'cdma-mode' ? (
+                // Dedicated CDMA Orthogonal Walsh Code & Mathematical Despreader Simulation
+                <CdmaStage />
+              ) : selectedTopic.id === 'dama-mode' ? (
+                // Dedicated DAMA Demand-Assignment Request-Grant Protocol Simulation
+                <DamaStage />
               ) : isMultipleAccessTopic ? (
-                // Phase 2 Simulator Stage (All 5 modes)
+                // Unscheduled Contention Mode (Pure ALOHA / CSMA Collision Arena)
                 <MultipleAccessStage />
               ) : isDemoActive ? (
                 // Phase 1 Demo (Multiple Access Overview)

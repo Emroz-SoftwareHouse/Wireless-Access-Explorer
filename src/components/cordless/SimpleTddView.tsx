@@ -21,50 +21,74 @@ export const SimpleTddView: React.FC = () => {
 
   // Total half-cycle and full-cycle duration in milliseconds
   // Downlink: Tb + Tp + Tg, Uplink: Tb + Tp + Tg
+  // Total half-cycle and full-cycle duration in milliseconds
+  // Downlink: Tb + Tp + Tg, Uplink: Tb + Tp + Tg
   const halfCycle = tb + tp + tg;
   const fullCycle = 2 * halfCycle;
 
-  // Current time modulo full-cycle in ms
-  // SimTime advances in seconds, so multiply by 1000
-  const currentT = ((simTime * 1000) % fullCycle);
+  // VISUAL PACING REFINEMENT (Phase 4.1):
+  // At 1x speed, map one full ping-pong cycle to 8.0 visual seconds so users can comfortably
+  // read Tb, Tp, Tg, formulas, and state changes before alternating.
+  const visualCycleSeconds = 8.0;
+  const cycleProgress = (simTime % visualCycleSeconds) / visualCycleSeconds; // 0.0 to 1.0
+  const currentT = cycleProgress * fullCycle; // simulated millisecond position
 
-  // Determine current phase
-  // Phase 0: Base Station transmitting (0 to Tb)
-  // Phase 1: Downlink propagating through air (Tb to Tb + Tp)
-  // Phase 2: Guard turnaround 1 (Tb + Tp to Tb + Tp + Tg)
-  // Phase 3: Handset transmitting (halfCycle to halfCycle + Tb)
-  // Phase 4: Uplink propagating through air (halfCycle + Tb to halfCycle + Tb + Tp)
-  // Phase 5: Guard turnaround 2 (halfCycle + Tb + Tp to fullCycle)
-  let phaseName = 'Downlink Burst (BS Transmitting)';
-  let phaseColor = 'text-cyan-500';
+  // Allocate visual proportions within the 8.0s cycle:
+  // Downlink:
+  // 0.00 - 0.35: Base Station Transmitting (hold 2.8s)
+  // 0.35 - 0.45: Downlink RF In-Flight Propagation (smooth motion 0.8s)
+  // 0.45 - 0.50: Guard Interval Tg 1 (turnaround hold 0.4s)
+  // Uplink:
+  // 0.50 - 0.85: Handset Transmitting (hold 2.8s)
+  // 0.85 - 0.95: Uplink RF In-Flight Propagation (smooth motion 0.8s)
+  // 0.95 - 1.00: Guard Interval Tg 2 (turnaround hold 0.4s)
+
+  let phaseName = 'Downlink Burst: Base Station Transmitting';
+  let phaseColor = 'text-cyan-500 dark:text-cyan-400';
   let phaseDesc = `Base Station compresses digitized subscriber data into a burst of duration Tb = ${tb.toFixed(1)} ms.`;
   let activeTransmitter = 'bs'; // 'bs' | 'air_down' | 'guard1' | 'handset' | 'air_up' | 'guard2'
 
-  if (currentT < tb) {
+  let packetProgress = 0; // 0 (at BS) to 1 (at Handset)
+  let isDownlinkActive = false;
+  let isUplinkActive = false;
+
+  if (cycleProgress < 0.35) {
     phaseName = 'Downlink Burst: Base Station Transmitting';
     phaseColor = 'text-cyan-500 dark:text-cyan-400';
     phaseDesc = `Base Station transmitting ${tb.toFixed(1)} ms burst at high rate A = ${actualRateA.toFixed(1)} kbps.`;
     activeTransmitter = 'bs';
-  } else if (currentT < tb + tp) {
+    isDownlinkActive = true;
+    packetProgress = 0.08; // at BS antenna
+  } else if (cycleProgress < 0.45) {
     phaseName = 'Downlink In-Flight: Over-The-Air Propagation';
     phaseColor = 'text-purple-500 dark:text-purple-400';
     phaseDesc = `RF wavefront travels distance d over propagation time Tp = ${tp.toFixed(2)} ms.`;
     activeTransmitter = 'air_down';
-  } else if (currentT < halfCycle) {
+    isDownlinkActive = true;
+    // Smooth continuous travel from BS to Handset over 0.8s
+    const travelT = (cycleProgress - 0.35) / 0.10;
+    packetProgress = 0.08 + travelT * 0.84;
+  } else if (cycleProgress < 0.50) {
     phaseName = 'Channel Guard Interval (Tg): Turnaround';
     phaseColor = 'text-amber-500 dark:text-amber-400';
     phaseDesc = `Transceivers switch between TX and RX modes; reflections clear over Tg = ${tg.toFixed(2)} ms.`;
     activeTransmitter = 'guard1';
-  } else if (currentT < halfCycle + tb) {
+  } else if (cycleProgress < 0.85) {
     phaseName = 'Uplink Burst: Handset Transmitting';
     phaseColor = 'text-emerald-500 dark:text-emerald-400';
     phaseDesc = `Handset responds on the SAME frequency carrier during its allocated burst time Tb = ${tb.toFixed(1)} ms.`;
     activeTransmitter = 'handset';
-  } else if (currentT < halfCycle + tb + tp) {
+    isUplinkActive = true;
+    packetProgress = 0.92; // at Handset antenna
+  } else if (cycleProgress < 0.95) {
     phaseName = 'Uplink In-Flight: Over-The-Air Propagation';
     phaseColor = 'text-purple-500 dark:text-purple-400';
     phaseDesc = `Uplink signal propagates back to Base Station over time Tp = ${tp.toFixed(2)} ms.`;
     activeTransmitter = 'air_up';
+    isUplinkActive = true;
+    // Smooth continuous travel from Handset to BS over 0.8s
+    const travelT = (cycleProgress - 0.85) / 0.10;
+    packetProgress = 0.92 - travelT * 0.84;
   } else {
     phaseName = 'Channel Guard Interval (Tg): Turnaround';
     phaseColor = 'text-amber-500 dark:text-amber-400';
@@ -76,19 +100,6 @@ export const SimpleTddView: React.FC = () => {
   const tbPct = (tb / fullCycle) * 100;
   const tpPct = (tp / fullCycle) * 100;
   const tgPct = (tg / fullCycle) * 100;
-
-  // Active packet position across link
-  let packetProgress = 0; // 0 (at BS) to 1 (at Handset)
-  let isDownlinkActive = false;
-  let isUplinkActive = false;
-
-  if (currentT < tb + tp) {
-    isDownlinkActive = true;
-    packetProgress = Math.min(1, Math.max(0, currentT / (tb + tp)));
-  } else if (currentT >= halfCycle && currentT < halfCycle + tb + tp) {
-    isUplinkActive = true;
-    packetProgress = 1 - Math.min(1, Math.max(0, (currentT - halfCycle) / (tb + tp)));
-  }
 
   return (
     <div className="w-full h-full flex flex-col p-2 sm:p-4 select-none overflow-y-auto max-w-4xl mx-auto gap-3 text-slate-800 dark:text-slate-100">
