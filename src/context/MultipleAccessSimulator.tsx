@@ -183,6 +183,8 @@ export const MultipleAccessProvider: React.FC<{ children: React.ReactNode }> = (
     simTime,
     simPlaying,
   } = useApp();
+  const isMultipleAccessActive = selectedTopic.categoryId === 'multiple_access'
+    || selectedTopic.id === 'multiple-access-techniques-overview';
 
   // Resolve multiple access mode from active topic ID
   const mode: MultipleAccessMode = useMemo(() => {
@@ -582,7 +584,7 @@ export const MultipleAccessProvider: React.FC<{ children: React.ReactNode }> = (
   // Auto-Traffic generator
   const nextAutoSendTimesRef = useRef<Record<string, number>>({});
   useEffect(() => {
-    if (!autoTraffic || !simPlaying) return;
+    if (!isMultipleAccessActive || !autoTraffic || !simPlaying) return;
 
     const activeList = [...BASE_DEVICES];
     if (mode === 'contention' && extraDeviceCount > 0) {
@@ -602,10 +604,11 @@ export const MultipleAccessProvider: React.FC<{ children: React.ReactNode }> = (
         nextAutoSendTimesRef.current[dev.id] = simTime + 2.5 + Math.random() * 3.0;
       }
     });
-  }, [autoTraffic, simPlaying, simTime, mode, extraDeviceCount, sendPacket]);
+  }, [autoTraffic, simPlaying, simTime, mode, extraDeviceCount, isMultipleAccessActive, sendPacket]);
 
   // Main Simulation Physics Tick: Calculates packet motion, collisions, and arrivals
   useEffect(() => {
+    if (!isMultipleAccessActive) return;
     const curPackets = packetsRef.current;
     if (curPackets.length === 0) return;
 
@@ -806,12 +809,12 @@ export const MultipleAccessProvider: React.FC<{ children: React.ReactNode }> = (
         }, 1500);
       }
     }
-  }, [simTime, mode, logEvent]);
+  }, [simTime, mode, isMultipleAccessActive, logEvent]);
 
   // Backoff timer countdown driven strictly by simulated clock
   const lastSimTimeTickRef = useRef<number>(simTime);
   useEffect(() => {
-    if (!simPlaying) {
+    if (!isMultipleAccessActive || !simPlaying) {
       lastSimTimeTickRef.current = simTime;
       return;
     }
@@ -848,7 +851,7 @@ export const MultipleAccessProvider: React.FC<{ children: React.ReactNode }> = (
         sendPacket(devId);
       });
     }
-  }, [simTime, simPlaying, mode, sendPacket]);
+  }, [simTime, simPlaying, mode, isMultipleAccessActive, sendPacket]);
 
   return (
     <MultipleAccessContext.Provider

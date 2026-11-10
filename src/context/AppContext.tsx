@@ -159,7 +159,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, []);
 
-  const [eventLogCollapsed, setEventLogCollapsed] = useState<boolean>(false);
+  // Keep the learning canvas prominent; telemetry remains one click away.
+  const [eventLogCollapsed, setEventLogCollapsed] = useState<boolean>(true);
   const toggleEventLogCollapse = useCallback(() => setEventLogCollapsed(prev => !prev), []);
 
   // Completion State (initialize with default topic completed = false, or track in state)
@@ -328,6 +329,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else if (topicId === 'mean-opinion-score-comparison') {
       const times = [0.00, 6.40, 12.80, 19.20];
       setSimTime(times[subStepIndex] ?? 0);
+    } else {
+      const targetTopic = ALL_TOPICS.find((topic) => topic.id === topicId);
+      if (targetTopic?.categoryId === 'wll' || targetTopic?.categoryId === 'wimax') {
+        const times = [0.00, 2.00, 4.00, 6.00];
+        setSimTime(times[subStepIndex] ?? 0);
+      }
     }
 
     // Scroll Theory tab to matching concept if element exists
@@ -398,6 +405,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else if (selectedTopicId === 'mean-opinion-score-comparison') {
       const s = Math.min(3, Math.floor((simTime % 22.4) / 5.6));
       setActiveSubStepIndex(s);
+    } else if (selectedTopic.categoryId === 'wll' || selectedTopic.categoryId === 'wimax') {
+      const s = Math.min(3, Math.floor((simTime % 8.0) / 2.0));
+      setActiveSubStepIndex(s);
     } else if (selectedTopic.categoryId === 'multiple_access') {
       const s = Math.min(3, Math.floor((simTime % 4.0) / 1.0));
       setActiveSubStepIndex(s);
@@ -445,6 +455,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const resetSimulation = useCallback(() => {
     setSimPlaying(false);
     setSimTime(0);
+    setActiveSubStepIndex(0);
     setDeliveredPacketsCount(0);
     processedEventsRef.current.clear();
     lastTimestampRef.current = null;
@@ -665,7 +676,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (lastTimestampRef.current === null) {
         lastTimestampRef.current = now;
       }
-      const deltaSec = (now - lastTimestampRef.current) / 1000;
+      // Background tabs may suspend requestAnimationFrame. Cap the resumed delta so
+      // packets continue smoothly instead of jumping across the channel on refocus.
+      const deltaSec = Math.min((now - lastTimestampRef.current) / 1000, 0.10);
       lastTimestampRef.current = now;
 
       setSimTime(prev => {
@@ -687,6 +700,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const totalTopics = ALL_TOPICS.length;
   const completedCount = completedTopicIds.size;
   const progressPercent = Math.round((completedCount / totalTopics) * 100);
+  const reportedDeliveredPacketsCount = useMemo(() => {
+    if (selectedTopic.categoryId === 'wll' || selectedTopic.categoryId === 'wimax') {
+      return Math.min(2, Math.floor((simTime + 0.001) / 4));
+    }
+    return deliveredPacketsCount;
+  }, [deliveredPacketsCount, selectedTopic.categoryId, simTime]);
 
   return (
     <AppContext.Provider
@@ -729,7 +748,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         simSpeed,
         simTime,
         setSimTime,
-        deliveredPacketsCount,
+        deliveredPacketsCount: reportedDeliveredPacketsCount,
         events,
         playSimulation,
         pauseSimulation,
