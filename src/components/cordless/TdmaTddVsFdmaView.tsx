@@ -29,7 +29,7 @@ export const TdmaTddVsFdmaView: React.FC = () => {
   // Forward Traffic Load Slider for Scene (b): 50% (Symmetric) to 85% (Asymmetric Downlink)
   const [forwardLoadPct, setForwardLoadPct] = useState<number>(70);
   const [manualOverrideLoad, setManualOverrideLoad] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'both' | 'fade' | 'capacity'>('both');
+  const [activeTab, setActiveTab] = useState<'both' | 'fade' | 'capacity'>('fade');
   const [showInfo, setShowInfo] = useState<string | null>(null);
 
   // --- FAST-FADE SIMULATION STATES ---
@@ -127,7 +127,7 @@ export const TdmaTddVsFdmaView: React.FC = () => {
                 activeTab === 'fade' ? 'bg-white dark:bg-slate-950 font-bold shadow-xs text-amber-600 dark:text-amber-400' : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              (a) Fast-Fade Diversity
+              Fast fading: why two antennas help
             </button>
             <button
               onClick={() => setActiveTab('capacity')}
@@ -135,7 +135,7 @@ export const TdmaTddVsFdmaView: React.FC = () => {
                 activeTab === 'capacity' ? 'bg-white dark:bg-slate-950 font-bold shadow-xs text-amber-600 dark:text-amber-400' : 'text-slate-500 hover:text-slate-900'
               }`}
             >
-              (b) Dynamic Capacity
+              Time slots: voice vs web traffic
             </button>
           </div>
         </div>
@@ -154,6 +154,22 @@ export const TdmaTddVsFdmaView: React.FC = () => {
             <span className="text-amber-600 dark:text-amber-400 font-bold">3. Limited Spectrum:</span>
             <span className="text-slate-600 dark:text-slate-400 block text-[10px] mt-0.5">Narrow allocation; single-carrier TDD eliminates dual-band need.</span>
           </div>
+        </div>
+      </div>
+
+      {/* Plain-language story shown before the engineering diagram. */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className={`rounded-xl border p-3 transition-all ${!isFadingAntA && !isFadingAntB ? 'border-cyan-400 bg-cyan-500/10 ring-1 ring-cyan-400/50' : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'}`}>
+          <div className="mb-1 text-[9px] font-black uppercase tracking-wider text-cyan-600 dark:text-cyan-300">1 · Person moves</div>
+          <p className="text-[11px] leading-snug text-slate-700 dark:text-slate-300">Direct and reflected radio waves arrive together while the handset user walks.</p>
+        </div>
+        <div className={`rounded-xl border p-3 transition-all ${isFadingAntA || isFadingAntB ? 'border-rose-400 bg-rose-500/10 ring-1 ring-rose-400/50' : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'}`}>
+          <div className="mb-1 text-[9px] font-black uppercase tracking-wider text-rose-600 dark:text-rose-300">2 · One path cancels</div>
+          <p className="text-[11px] leading-snug text-slate-700 dark:text-slate-300">At one antenna the wave copies oppose each other, so its received signal briefly becomes weak. That is a fast fade.</p>
+        </div>
+        <div className={`rounded-xl border p-3 transition-all ${isFadingAntA || isFadingAntB ? 'border-emerald-400 bg-emerald-500/10 ring-1 ring-emerald-400/50' : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'}`}>
+          <div className="mb-1 text-[9px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-300">3 · Stronger antenna wins</div>
+          <p className="text-[11px] leading-snug text-slate-700 dark:text-slate-300">The base station compares A and B, selects the stronger one, and sends the reply through that safer path.</p>
         </div>
       </div>
 
@@ -192,7 +208,7 @@ export const TdmaTddVsFdmaView: React.FC = () => {
             {/* Interactive Fading Controls Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 text-[10px] font-mono">
               <div className="flex items-center gap-1">
-                <span className="text-slate-500 mr-1 hidden xs:inline">Inject Fade:</span>
+                  <span className="text-slate-500 mr-1 hidden xs:inline">Try it:</span>
                 <button
                   onClick={() => setFadeMode('fade_a')}
                   className={`px-2 py-0.5 rounded border transition-all font-bold ${
@@ -201,7 +217,7 @@ export const TdmaTddVsFdmaView: React.FC = () => {
                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-300'
                   }`}
                 >
-                  Fade Ant A
+                  Make Antenna A weak
                 </button>
                 <button
                   onClick={() => setFadeMode('fade_b')}
@@ -211,7 +227,7 @@ export const TdmaTddVsFdmaView: React.FC = () => {
                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-300'
                   }`}
                 >
-                  Fade Ant B
+                  Make Antenna B weak
                 </button>
                 <button
                   onClick={() => setFadeMode('clear')}
@@ -221,7 +237,7 @@ export const TdmaTddVsFdmaView: React.FC = () => {
                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-300'
                   }`}
                 >
-                  Clear LOS
+                  Clear signal
                 </button>
                 <button
                   onClick={() => setFadeMode('auto')}
@@ -231,7 +247,7 @@ export const TdmaTddVsFdmaView: React.FC = () => {
                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-300'
                   }`}
                 >
-                  Auto Cycle
+                  Automatic story
                 </button>
               </div>
 

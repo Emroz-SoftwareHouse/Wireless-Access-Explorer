@@ -439,6 +439,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Topology', value: 'Point-to-Multipoint (PMP) Sectorized' },
       { label: 'Alternative To', value: 'Twisted Pair, xDSL, and Coaxial Cable' },
     ],
+    isImplemented: true,
   },
   {
     id: 'fresnel-zone',
@@ -447,20 +448,21 @@ export const ALL_TOPICS: Topic[] = [
     categoryId: 'wll',
     sectionRef: '11.2',
     description: 'Concentric ellipsoidal clearance zones and 0.6 Fresnel radius obstacle avoidance.',
-    fullDescription: 'Millimeter-wave signals require a clear Fresnel zone between transmitter and receiver. Objects within the first Fresnel zone cause destructive wave interference; standard engineering requires at least 60% clearance (0.6 R) of the first Fresnel radius.',
+    fullDescription: 'Millimeter-wave links need space around the visual path. Objects in the first Fresnel zone can weaken the signal through diffraction and interference. Keeping about 60% of the first Fresnel radius clear is a common planning target; detailed path design may require a different clearance.',
     subSteps: [
       'First Fresnel zone radius formula: R = sqrt((λ * S * D) / (S + D))',
       'Practical form: R_m = 17.3 * sqrt((S_km * D_km) / (f_GHz * (S_km + D_km)))',
-      'Path clearance rule: Obstacles must not intrude within 0.6 * R',
+      'Common path-planning target: keep 0.6 * R clear of obstacles',
       'Antenna mast height calculation to clear earth curvature and structures',
     ],
     osiLayers: [1],
     specs: [
       { label: 'Zone Geometry', value: 'Ellipsoid of revolution around LOS path' },
-      { label: 'Clearance Standard', value: 'Minimum 0.6 × R_1 radius clearance' },
+      { label: 'Planning Target', value: 'About 0.6 × R_1 clearance; verify each path' },
       { label: 'Primary Obstacle', value: 'Ground reflection, ridges, and buildings' },
       { label: 'Frequency Impact', value: 'Higher frequency yields narrower Fresnel radius' },
     ],
+    isImplemented: true,
   },
   {
     id: 'atmospheric-absorption',
@@ -483,6 +485,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'LMDS Window', value: '28 GHz to 42 GHz (~0.13 dB/km)' },
       { label: 'EHF Window', value: '75 GHz to 95 GHz (~0.4 dB/km)' },
     ],
+    isImplemented: true,
   },
   {
     id: 'rain-attenuation-calculator',
@@ -505,6 +508,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Polarization Trade', value: 'Vertical polarization suffers less rain loss' },
       { label: 'Typical 30 GHz Loss', value: '24.2 dB/km in Zone P rain' },
     ],
+    isImplemented: true,
   },
   {
     id: 'foliage-effects',
@@ -527,6 +531,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Fading Dynamic', value: 'Rapid temporal fluctuation with wind' },
       { label: 'Engineering Rule', value: 'Avoid foliage within 60% of 1st Fresnel zone' },
     ],
+    isImplemented: true,
   },
   {
     id: 'orthogonal-frequency-division-multiplexing-ofdm',
@@ -549,6 +554,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Symbol Duration', value: 'Multiplied by N substreams' },
       { label: 'Key Standards', value: 'IEEE 802.16a, IEEE 802.11a/g, LTE' },
     ],
+    isImplemented: true,
   },
   {
     id: 'mmds-vs-lmds',
@@ -571,6 +577,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Cell Coverage', value: 'MMDS: ~50 km / LMDS: 2 to 4 km' },
       { label: 'Target Market', value: 'MMDS: Residential / LMDS: High-density business' },
     ],
+    isImplemented: true,
   },
 
   // --- WIMAX & IEEE 802.16 (11.3) ---
@@ -595,6 +602,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Topology', value: 'Point-to-Multipoint (PMP) + Optional Mesh' },
       { label: 'Core Networks', value: 'PSTN, ATM, IP, Ethernet' },
     ],
+    isImplemented: true,
   },
   {
     id: '802-16-protocol-stack-encapsulation',
@@ -617,6 +625,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Framing Model', value: 'Higher-layer PDU encapsulated into MAC PDU' },
       { label: 'Link Control', value: 'Integrated MAC framing and CRC-32' },
     ],
+    isImplemented: true,
   },
   {
     id: 'services-qos-categories',
@@ -639,6 +648,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'nrtPS Parameters', value: 'Guaranteed minimum rate, no latency bound' },
       { label: 'BE Parameters', value: 'Contention-based opportunistic scheduling' },
     ],
+    isImplemented: true,
   },
   {
     id: 'mac-frame-format-bit-field-decoder',
@@ -661,6 +671,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'HCS Field', value: '8-bit CRC polynomial generator' },
       { label: 'Frame Checksum', value: '32-bit CRC (Ethernet-grade protection)' },
     ],
+    isImplemented: true,
   },
   {
     id: 'mac-service-flows-bandwidth-grants',
@@ -683,6 +694,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Request Styles', value: 'Dedicated BW Req Frame or Piggybacked' },
       { label: 'Scheduling Base', value: 'Centralized Base Station authority' },
     ],
+    isImplemented: true,
   },
   {
     id: 'fragmentation-reassembly',
@@ -705,6 +717,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Reassembly Layer', value: 'Destination MAC entity' },
       { label: 'Efficiency Gain', value: 'Matches exact grant boundaries without padding' },
     ],
+    isImplemented: true,
   },
   {
     id: 'physical-layer-duplexing-modes',
@@ -727,6 +740,7 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Upstream Access', value: 'DAMA-TDMA with Reed-Solomon FEC' },
       { label: 'Modulation Formats', value: 'QPSK, 16-QAM, 64-QAM adaptive' },
     ],
+    isImplemented: true,
   },
   {
     id: 'ieee-802-16a-data-rate-calculator',
@@ -749,5 +763,6 @@ export const ALL_TOPICS: Topic[] = [
       { label: 'Max Throughput', value: '74.81 Mbps (20 MHz, 64-QAM 3/4)' },
       { label: 'Min Throughput', value: '1.04 Mbps (1.75 MHz, QPSK 1/2)' },
     ],
+    isImplemented: true,
   },
 ];
