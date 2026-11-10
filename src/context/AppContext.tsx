@@ -127,8 +127,8 @@ function getPlaceholderEvents(topic: Topic): SimEvent[] {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Topics & Navigation
-  const [selectedTopicId, setSelectedTopicIdState] = useState<string>('multiple-access-techniques-overview');
-  const [selectedCategory, setSelectedCategory] = useState<CategoryId | 'all'>('all');
+  const [selectedTopicId, setSelectedTopicIdState] = useState<string>('time-division-duplex-simple-tdd');
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId | 'all'>('cordless');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeSubStepIndex, setActiveSubStepIndex] = useState<number>(0);
 
