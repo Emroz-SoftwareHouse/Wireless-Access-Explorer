@@ -53,10 +53,13 @@ export const OverviewCard: React.FC = () => {
   const isCompleted = completedTopicIds.has(selectedTopic.id);
   const categoryInfo = CATEGORIES[selectedTopic.categoryId];
   const isMultipleAccessTopic = selectedTopic.categoryId === 'multiple_access';
+  const hasChapter11PacketFlow = selectedTopic.categoryId === 'wll' || selectedTopic.categoryId === 'wimax';
   const activeOsiLayerInfo = selectedOsiLayer ? OSI_LAYERS.find(l => l.layerNumber === selectedOsiLayer) : null;
 
   // Compute active delivered count
-  const effectiveDelivered = isMultipleAccessTopic ? maDeliveredCount : (isDemoActive ? deliveredPacketsCount : 0);
+  const effectiveDelivered = isMultipleAccessTopic
+    ? maDeliveredCount
+    : (isDemoActive || hasChapter11PacketFlow ? deliveredPacketsCount : 0);
 
   const collapsedRailContent = (
     <div className="flex flex-col items-center h-full py-2.5 px-1 bg-white dark:bg-[#080c17] text-slate-800 dark:text-slate-100 select-none w-14">
@@ -509,13 +512,13 @@ export const OverviewCard: React.FC = () => {
             <div className="grid grid-cols-2 gap-2 text-xs">
               {/* Live Packets Delivered */}
               <div className="p-2 rounded-lg bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-xs">
-                <span className="text-[10px] text-slate-500 block font-mono">Packets Delivered</span>
+                <span className="text-[10px] text-slate-500 block font-mono">{selectedTopic.categoryId === 'wll' ? 'Path Animation' : 'Packets Delivered'}</span>
                 <div className="flex items-baseline gap-1 mt-0.5">
                   <span className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 tabular-nums">
-                    {effectiveDelivered}
+                    {selectedTopic.categoryId === 'wll' ? (simPlaying ? 'Moving' : 'Paused') : effectiveDelivered}
                   </span>
                   <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                    {isMultipleAccessTopic ? 'received' : '/ 2 max'}
+                    {selectedTopic.categoryId === 'wll' ? 'teaching model' : isMultipleAccessTopic ? 'received' : '/ 2 max'}
                   </span>
                 </div>
               </div>

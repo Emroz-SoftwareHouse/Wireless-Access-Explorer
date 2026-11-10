@@ -1,23 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import { useMultipleAccess } from '../context/MultipleAccessSimulator';
 import { CanvasViewMode, SimSpeed } from '../types';
-import { MultipleAccessDemoCanvas } from './demo/MultipleAccessDemoCanvas';
-import { MultipleAccessStage } from './multiple_access/MultipleAccessStage';
 import { OsiModelView } from './fundamentals/OsiModelView';
-import { PcmVoiceView } from './fundamentals/PcmVoiceView';
-import { MultipathLossView } from './fundamentals/MultipathLossView';
-import { CrcArqView } from './fundamentals/CrcArqView';
-import { SimpleTddView } from './cordless/SimpleTddView';
-import { TdmaTddVsFdmaView } from './cordless/TdmaTddVsFdmaView';
-import { DectArchitectureView } from './cordless/DectArchitectureView';
-import { DpcmAdpcmView } from './cordless/DpcmAdpcmView';
-import { MosComparisonView } from './cordless/MosComparisonView';
-import { FdmaStage } from './multiple_access/FdmaStage';
-import { TdmaStage } from './multiple_access/TdmaStage';
-import { CdmaStage } from './multiple_access/CdmaStage';
-import { DamaStage } from './multiple_access/DamaStage';
-import { TheoryView } from './theory/TheoryView';
+import { SimulationGuide } from './SimulationGuide';
+import { StepSequenceView } from './StepSequenceView';
 import { CATEGORIES } from '../data/topics';
 import { 
   Network, 
@@ -41,6 +28,29 @@ import {
   Radio,
   BookOpen
 } from 'lucide-react';
+
+const MultipleAccessDemoCanvas = lazy(() => import('./demo/MultipleAccessDemoCanvas').then(module => ({ default: module.MultipleAccessDemoCanvas })));
+const MultipleAccessStage = lazy(() => import('./multiple_access/MultipleAccessStage').then(module => ({ default: module.MultipleAccessStage })));
+const PcmVoiceView = lazy(() => import('./fundamentals/PcmVoiceView').then(module => ({ default: module.PcmVoiceView })));
+const MultipathLossView = lazy(() => import('./fundamentals/MultipathLossView').then(module => ({ default: module.MultipathLossView })));
+const CrcArqView = lazy(() => import('./fundamentals/CrcArqView').then(module => ({ default: module.CrcArqView })));
+const SimpleTddView = lazy(() => import('./cordless/SimpleTddView').then(module => ({ default: module.SimpleTddView })));
+const TdmaTddVsFdmaView = lazy(() => import('./cordless/TdmaTddVsFdmaView').then(module => ({ default: module.TdmaTddVsFdmaView })));
+const DectArchitectureView = lazy(() => import('./cordless/DectArchitectureView').then(module => ({ default: module.DectArchitectureView })));
+const DpcmAdpcmView = lazy(() => import('./cordless/DpcmAdpcmView').then(module => ({ default: module.DpcmAdpcmView })));
+const MosComparisonView = lazy(() => import('./cordless/MosComparisonView').then(module => ({ default: module.MosComparisonView })));
+const FdmaStage = lazy(() => import('./multiple_access/FdmaStage').then(module => ({ default: module.FdmaStage })));
+const TdmaStage = lazy(() => import('./multiple_access/TdmaStage').then(module => ({ default: module.TdmaStage })));
+const CdmaStage = lazy(() => import('./multiple_access/CdmaStage').then(module => ({ default: module.CdmaStage })));
+const DamaStage = lazy(() => import('./multiple_access/DamaStage').then(module => ({ default: module.DamaStage })));
+const TheoryView = lazy(() => import('./theory/TheoryView').then(module => ({ default: module.TheoryView })));
+const Chapter11ScenarioView = lazy(() => import('./chapter11/Chapter11ScenarioView').then(module => ({ default: module.Chapter11ScenarioView })));
+
+const SimulationLoading = () => (
+  <div className="flex h-full w-full items-center justify-center text-xs font-bold text-cyan-600 dark:text-cyan-300">
+    Loading this simulation…
+  </div>
+);
 
 export const NetworkCanvas: React.FC = () => {
   const {
@@ -81,7 +91,10 @@ export const NetworkCanvas: React.FC = () => {
 
   const categoryInfo = CATEGORIES[selectedTopic.categoryId];
   const isMultipleAccessTopic = selectedTopic.categoryId === 'multiple_access';
-  const effectiveDelivered = isMultipleAccessTopic ? maDeliveredCount : (isDemoActive ? deliveredPacketsCount : 0);
+  const hasChapter11PacketFlow = selectedTopic.categoryId === 'wll' || selectedTopic.categoryId === 'wimax';
+  const effectiveDelivered = isMultipleAccessTopic
+    ? maDeliveredCount
+    : (isDemoActive || hasChapter11PacketFlow ? deliveredPacketsCount : 0);
 
   // Listen for ESC key to exit maximized mode
   useEffect(() => {
@@ -203,12 +216,14 @@ export const NetworkCanvas: React.FC = () => {
             : 'flex-1 min-w-0 min-h-0 h-full border-slate-200 dark:border-slate-800/90 relative overflow-hidden'
         }`}
       >
-        {/* 1. Header Toolbar (Net/Seq/Th tabs + Zoom/Fit/Max) */}
+        {/* 1. Header Toolbar (Simulation/Steps/Theory tabs + Zoom/Fit/Max) */}
         <div className="h-11 sm:h-12 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#090d1c] px-3 sm:px-4 flex items-center justify-between shrink-0">
           {/* Left: Tabbed NETWORK / SEQUENCE / THEORY view toggle */}
           <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-900/90 rounded-lg border border-slate-200 dark:border-slate-800">
             <button
               onClick={() => setCanvasView('network')}
+              aria-label="Simulation view"
+              title="Interactive simulation"
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-md text-xs font-semibold transition-all ${
                 canvasView === 'network'
                   ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-500/40 shadow-sm'
@@ -216,11 +231,13 @@ export const NetworkCanvas: React.FC = () => {
               }`}
             >
               <Network className="h-3.5 w-3.5" />
-              <span className="hidden xs:inline">Network</span>
-              <span className="xs:hidden">Net</span>
+              <span className="hidden xs:inline">Simulation</span>
+              <span className="xs:hidden">Sim</span>
             </button>
             <button
               onClick={() => setCanvasView('sequence')}
+              aria-label="Step-by-step view"
+              title="Step-by-step explanation"
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-md text-xs font-semibold transition-all ${
                 canvasView === 'sequence'
                   ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-500/40 shadow-sm'
@@ -228,11 +245,12 @@ export const NetworkCanvas: React.FC = () => {
               }`}
             >
               <GitCommit className="h-3.5 w-3.5" />
-              <span className="hidden xs:inline">Sequence</span>
-              <span className="xs:hidden">Seq</span>
+              <span>Steps</span>
             </button>
             <button
               onClick={() => setCanvasView('theory')}
+              aria-label="Theory view"
+              title="Chapter theory and key values"
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-md text-xs font-semibold transition-all ${
                 canvasView === 'theory'
                   ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-500/40 shadow-sm'
@@ -240,8 +258,7 @@ export const NetworkCanvas: React.FC = () => {
               }`}
             >
               <BookOpen className="h-3.5 w-3.5" />
-              <span className="hidden xs:inline">Theory</span>
-              <span className="xs:hidden">Th</span>
+              <span>Theory</span>
             </button>
           </div>
 
@@ -325,9 +342,12 @@ export const NetworkCanvas: React.FC = () => {
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
         >
+          <Suspense fallback={<SimulationLoading />}>
           {canvasView === 'theory' ? (
             // Stallings Textbook Theory (Scrollable document, bypasses pan/zoom transform)
             <TheoryView />
+          ) : canvasView === 'sequence' ? (
+            <StepSequenceView />
           ) : (
             // INNER PANNABLE / ZOOMABLE CONTENT LAYER (Transforms as a single unified layer)
             <div
@@ -367,6 +387,9 @@ export const NetworkCanvas: React.FC = () => {
               ) : selectedTopic.id === 'mean-opinion-score-comparison' ? (
                 // Phase 4 Cordless Systems: Mean Opinion Score Comparison
                 <MosComparisonView />
+              ) : selectedTopic.categoryId === 'wll' || selectedTopic.categoryId === 'wimax' ? (
+                // Complete Chapter 11.2 and 11.3 animated learning laboratory
+                <Chapter11ScenarioView />
               ) : selectedTopic.id === 'fdma-mode' ? (
                 // Dedicated FDMA Multi-Lane RF Spectrum & Filter Bank Simulation
                 <FdmaStage />
@@ -425,7 +448,13 @@ export const NetworkCanvas: React.FC = () => {
               )}
             </div>
           )}
+          </Suspense>
         </div>
+
+        {canvasView === 'network' && (
+          <>
+            {/* Plain-language teaching guide shared by every simulation. */}
+            <SimulationGuide />
 
         {/* 3. DOCKED BOTTOM CONTROL BAR (Play, Step, Reset, Speed, Clock, Status) */}
         <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#090d1c] px-3 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-3 shrink-0 select-none">
@@ -540,8 +569,8 @@ export const NetworkCanvas: React.FC = () => {
             ) : (
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 shadow-xs">
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                <span>Delivered:</span>
-                <strong className="text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">{effectiveDelivered}</strong>
+                <span>{selectedTopic.categoryId === 'wll' ? 'Path animation:' : 'Delivered:'}</span>
+                <strong className="text-emerald-600 dark:text-emerald-400 font-bold tabular-nums">{selectedTopic.categoryId === 'wll' ? (simPlaying ? 'Moving' : 'Paused') : effectiveDelivered}</strong>
               </div>
             )}
 
@@ -583,6 +612,8 @@ export const NetworkCanvas: React.FC = () => {
               })}
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
     </>
